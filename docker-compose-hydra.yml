@@ -1,0 +1,27 @@
+drayredis:
+   image: centurylink/redis:latest
+   ports:
+    - "6379:6379"
+dray:
+    image: centurylink/dray
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:rw"
+    ports:
+      - "3003:3000"
+    links:
+       - drayredis:redis
+promserver:
+  image: prom/prometheus
+  volumes:
+    - "$PWD/prometheus.yml:/etc/prometheus/prometheus.yml"
+    - "$PWD/alert.rules:/etc/prometheus/alert.rules"
+  ports:
+    - "9090:9090"
+  command: "-config.file=/etc/prometheus/prometheus.yml -alertmanager.url=http://192.168.59.103:9093"
+promalertmgr:
+  image: prom/alertmanager
+  ports:
+    - "9093:9093"
+  command: "-config.file=/alertmanager.conf"
+  volumes:
+    - "$PWD/alertmanager.conf:/alertmanager.conf"
