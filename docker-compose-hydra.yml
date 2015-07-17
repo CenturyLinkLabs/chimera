@@ -1,3 +1,8 @@
+consul:
+  image: progrium/consul
+  ports:
+   - "8500:8500"
+  command: "-server -bootstrap"
 drayredis:
    image: centurylink/redis:latest
    ports:
