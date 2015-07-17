@@ -1,4 +1,5 @@
 #!/bin/bash
+set -x
 
 echo $#
 if [[ "$#" != "3" ]]; then
@@ -27,14 +28,32 @@ chmod +x /usr/local/bin/docker-compose
 docker rm -f `docker ps -aq`
 docker-machine rm -f `docker-machine ls | awk '{print $1}'`
 
-#Run Consul, Dray, Prometheus
-docker-compose up -d docker-compose-hydra.yml
-
 #Create Swarm Token
 export SWARM_TOKEN=$(docker run swarm create)
 echo "SWARM_TOKEN=$SWARM_TOKEN" > .hydra_env
 
-sw_master="`cat /dev/urandom | tr -dc 'A-Z' | fold -w 6 | head -n 1`"
+prefix="`cat /dev/urandom | tr -dc 'a-z' | fold -w 6 | head -n 1`"
+echo "SWARM_PREFIX=$prefix" >> .hydra_env
+sw_master="$prefix-m"
+
+function install_prometheus_agent() {
+    eval "$(docker-machine env $1)"
+
+    docker run -d --name PROM_CON_EXP \
+        --restart=always \
+        -p 9104:9104 \
+        -v /sys/fs/cgroup:/cgroup \
+        -v /var/run/docker.sock:/var/run/docker.sock \
+        prom/container-exporter
+
+    docker run -d --name PROM_NODE_EXP \
+        --resart=always \
+        -p 9100:9100 \
+        --net="host" \
+        prom/node-exporter
+
+    eval "$(docker-machine env -u)"
+}
 
 #Create Master
 docker-machine --debug create \
@@ -45,13 +64,14 @@ docker-machine --debug create \
   --swarm \
   --swarm-master \
   --swarm-discovery token://$SWARM_TOKEN \
-  --engine-opt="kv-store=consul:$admin_host_ip:8500" \
   $sw_master
 
+install_prometheus_agent $sw_master
+machine_ips="'$(docker-machine ip $sw_master):9104', '$(docker-machine ip $sw_master):9100  '"
+
 #Create Swarm Nodes
-prefix="`cat /dev/urandom | tr -dc 'a-z' | fold -w 6 | head -n 1`"
 for i in $(seq 1 $node_count); do
-    id=$prefix-$i
+    id="$prefix-$i"
     docker-machine --debug create \
         -d digitalocean \
         --digitalocean-access-token $api_token \
@@ -59,10 +79,22 @@ for i in $(seq 1 $node_count); do
         --digitalocean-image="ubuntu-14-10-x64" \
         --swarm \
 	    --swarm-discovery token://$SWARM_TOKEN \
-        --engine-opt="kv-store=consul:$admin_host_ip:8500" \
         $id
+
+    install_prometheus_agent $id
+    machine_ips="$machine_ips, '$(docker-machine ip $id):9104', '$(docker-machine ip $id):9100'"
 done
 
-#Switch to Swarm-master
-eval "$(docker-machine env --swarm $sw_master)"
+#Switch back to admin machine
+eval "$(docker-machine env -u)"
+
+#Run Consul, Dray, Prometheus
+sed -i s/ADMIN_HOST_IP_ADDRESS/$admin_host_ip/g docker-compose-hydra.yml
+sed -i s/TARGET_HOST_IP_ADDRESSES/"$machine_ips"/g prometheus.yml
+docker-compose -f docker-compose-hydra.yml up -d
+
+
+
+
+
 

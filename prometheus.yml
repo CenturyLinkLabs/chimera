@@ -7,7 +7,7 @@ global:
 
   # Attach these extra labels to all time-series collected by this Prometheus instance.
   labels:
-    monitor: 'panamax-monitor'
+    monitor: 'hydra-monitor'
 
 rule_files:
   - '/etc/prometheus/alert.rules'
@@ -16,8 +16,8 @@ rule_files:
 scrape_configs:
   # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
 
-  # Panamax
-  - job_name: 'panamax'
+  # Hydra
+  - job_name: 'hydra'
     scrape_interval: 5s
 
     # Override the global default and scrape targets from this job every 5 seconds.
@@ -25,6 +25,6 @@ scrape_configs:
     scrape_timeout: 10s
 
     target_groups:
-      - targets: ['10.0.0.200:3002']
+      - targets: [TARGET_HOST_IP_ADDRESSES]
         labels:
           group: 'development'

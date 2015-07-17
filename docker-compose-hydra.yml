@@ -1,12 +1,14 @@
-consul:
-  image: progrium/consul
-  ports:
-   - "8500:8500"
-  command: "-server -bootstrap"
+#consul:
+#  image: progrium/consul
+#  ports:
+#   - "8500:8500"
+#  command: "-server -bootstrap"
+
 drayredis:
    image: centurylink/redis:latest
    ports:
     - "6379:6379"
+
 dray:
     image: centurylink/dray
     volumes:
@@ -15,6 +17,7 @@ dray:
       - "3003:3000"
     links:
        - drayredis:redis
+
 promserver:
   image: prom/prometheus
   volumes:
@@ -22,7 +25,8 @@ promserver:
     - "$PWD/alert.rules:/etc/prometheus/alert.rules"
   ports:
     - "9090:9090"
-  command: "-config.file=/etc/prometheus/prometheus.yml -alertmanager.url=http://192.168.59.103:9093"
+  command: "-config.file=/etc/prometheus/prometheus.yml -alertmanager.url=http://ADMIN_HOST_IP_ADDRESS:9093"
+
 promalertmgr:
   image: prom/alertmanager
   ports:
