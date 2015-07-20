@@ -25,6 +25,6 @@ scrape_configs:
     scrape_timeout: 10s
 
     target_groups:
-      - targets: [TARGET_HOST_IP_ADDRESSES]
+      - targets: []
         labels:
           group: 'development'

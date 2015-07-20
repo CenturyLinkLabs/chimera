@@ -1,40 +1,14 @@
 #!/bin/bash
-set -x
 
-echo $#
-if [[ "$#" != "3" ]]; then
-  echo "You need to run the script with ./admin.sh <DO api token> <admin host ip> <number of nodes>"
-  exit 1;
-fi
 
-api_token=$1
-admin_host_ip=$2
-node_count=$3
+ENV=".hydra_env"
+admin_op=$1
 
-apt-get -y -q install wget unzip curl
-
-#Install Docker
-wget -qO- https://get.docker.com/ | sh
-
-#Install Docker-Machine
-curl -L https://github.com/docker/machine/releases/download/v0.3.0/docker-machine_linux-amd64 > /usr/local/bin/docker-machine
-chmod +x /usr/local/bin/docker-machine
-
-#Install Docker-Compose
-curl -L https://github.com/docker/compose/releases/download/1.3.1/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose
-chmod +x /usr/local/bin/docker-compose
-
-#Cleanup old containers if there are any
-docker rm -f `docker ps -aq`
-docker-machine rm -f `docker-machine ls | awk '{print $1}'`
-
-#Create Swarm Token
-export SWARM_TOKEN=$(docker run swarm create)
-echo "SWARM_TOKEN=$SWARM_TOKEN" > .hydra_env
-
-prefix="`cat /dev/urandom | tr -dc 'a-z' | fold -w 6 | head -n 1`"
-echo "SWARM_PREFIX=$prefix" >> .hydra_env
-sw_master="$prefix-m"
+function setEnvVar {
+    local envVarName=`echo "$1" | sed 's/[PMX_]+//g'`
+    echo $"`sed  "/$envVarName=/d" "$ENV"`" > "$ENV"
+    echo export $1=$2 >> "$ENV"
+}
 
 function install_prometheus_agent() {
     eval "$(docker-machine env $1)"
@@ -47,54 +21,113 @@ function install_prometheus_agent() {
         prom/container-exporter
 
     docker run -d --name PROM_NODE_EXP \
-        --resart=always \
+        --restart=always \
         -p 9100:9100 \
         --net="host" \
         prom/node-exporter
 
     eval "$(docker-machine env -u)"
+    tmp_ip=$(docker-machine ip $id)
+    cur=$(grep targets.*: prometheus.yml)
+    new=$(echo $cur | sed s/]/", \'$tmp_ip:9100\', \'$tmp_ip:9104\']"/g)
+    sed -i s/"-.*targets:.*]"/"$new"/g prometheus.yml
+    sed -i s/"targets:.*\[,"/"targets: ["/g prometheus.yml
 }
 
-#Create Master
-docker-machine --debug create \
-  --driver digitalocean \
-  --digitalocean-access-token $api_token \
-  --digitalocean-private-networking \
-  --digitalocean-image="ubuntu-14-10-x64" \
-  --swarm \
-  --swarm-master \
-  --swarm-discovery token://$SWARM_TOKEN \
-  $sw_master
-
-install_prometheus_agent $sw_master
-machine_ips="'$(docker-machine ip $sw_master):9104', '$(docker-machine ip $sw_master):9100  '"
-
-#Create Swarm Nodes
-for i in $(seq 1 $node_count); do
-    id="$prefix-$i"
+function deploy_swarm_node() {
+    id=$1
+    addl_flags=$2
     docker-machine --debug create \
         -d digitalocean \
         --digitalocean-access-token $api_token \
         --digitalocean-private-networking \
         --digitalocean-image="ubuntu-14-10-x64" \
-        --swarm \
+        --swarm  $addl_flags \
 	    --swarm-discovery token://$SWARM_TOKEN \
         $id
 
     install_prometheus_agent $id
-    machine_ips="$machine_ips, '$(docker-machine ip $id):9104', '$(docker-machine ip $id):9100'"
-done
+}
 
-#Switch back to admin machine
-eval "$(docker-machine env -u)"
+function deploy_cluster() {
+    apt-get -y -q install wget unzip curl
 
-#Run Consul, Dray, Prometheus
-sed -i s/ADMIN_HOST_IP_ADDRESS/$admin_host_ip/g docker-compose-hydra.yml
-sed -i s/TARGET_HOST_IP_ADDRESSES/"$machine_ips"/g prometheus.yml
-docker-compose -f docker-compose-hydra.yml up -d
+    #Install Docker
+    wget -qO- https://get.docker.com/ | sh
 
+    #Install Docker-Machine
+    curl -L https://github.com/docker/machine/releases/download/v0.3.0/docker-machine_linux-amd64 > /usr/local/bin/docker-machine
+    chmod +x /usr/local/bin/docker-machine
 
+    #Install Docker-Compose
+    curl -L https://github.com/docker/compose/releases/download/1.3.1/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose
+    chmod +x /usr/local/bin/docker-compose
 
+    #Cleanup old containers if there are any
+    docker rm -f `docker ps -aq`
+    docker-machine rm -f `docker-machine ls | awk '{print $1}'`
 
+    #Create Swarm Token
+    export SWARM_TOKEN=$(docker run swarm create)
+    setEnvVar "SWARM_TOKEN" "$SWARM_TOKEN"
 
+    SWARM_PREFIX="`cat /dev/urandom | tr -dc 'a-z' | fold -w 6 | head -n 1`"
+    setEnvVar "SWARM_PREFIX" "$SWARM_PREFIX"
+    sw_master="$SWARM_PREFIX-m"
 
+    #Create Master
+    deploy_swarm_node $sw_master " --swarm-master "
+
+    #Create Swarm Nodes
+    for i in $(seq 1 $node_count); do
+        deploy_swarm_node "$SWARM_PREFIX-$i"
+    done
+
+    #Run Consul, Dray, Prometheus
+    sed -i s/ADMIN_HOST_IP_ADDRESS/$admin_host_ip/g docker-compose-hydra.yml
+    docker-compose -f docker-compose-hydra.yml up -d
+
+    #Switch back to admin machine
+    eval "$(docker-machine env -u)"
+}
+
+function add_cluster_nodes() {
+    #Create Swarm Nodes
+    if [[ "$NODE_COUNT" == "" ]]; then
+        NODE_COUNT=0
+    fi
+    for i in $(seq 1 $node_count); do
+        deploy_swarm_node "$SWARM_PREFIX-$(($i+$NODE_COUNT))"
+    done
+    docker-compose -f docker-compose-hydra.yml up -d
+}
+
+if [[ "$admin_op" == "create" ]]; then
+    if [[ "$#" == "4" ]]; then
+        api_token=$2
+        admin_host_ip=$3
+        node_count=$4
+
+        deploy_cluster
+        setEnvVar "NODE_COUNT" "$node_count"
+    else
+        echo -e "You need to run the admin script with \n\t./admin.sh create <DO api token> <admin host ip> <number of nodes>\n"
+        exit 1;
+    fi
+elif [[ "$admin_op" == "add" ]]; then
+    if [[ "$#" == "3" ]]; then
+        api_token=$2
+        node_count=$3
+        source .hydra_env
+        add_cluster_nodes
+        setEnvVar "NODE_COUNT" "$(($node_count+$NODE_COUNT))"
+        eval "$(docker-machine env -u)"
+    else
+        echo -e "You need to run the admin script with \n\t./admin.sh add <DO api token> <number of nodes>\n"
+        exit 1;
+    fi
+else
+    echo -e "You need to run the admin script with \n\t./admin.sh create <DO api token> <admin host ip> <number of nodes> \
+                            \n\t OR ./admin.sh add <DO api token> <number of nodes>\n"
+    exit 1;
+fi
