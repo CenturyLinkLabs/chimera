@@ -93,7 +93,7 @@ function deploy_cluster() {
     eval "$(docker-machine env -u)"
 
     #Start Hydra
-    ./hydrago &
+    cd bin && ./hydrago &
 }
 
 function add_cluster_nodes() {
