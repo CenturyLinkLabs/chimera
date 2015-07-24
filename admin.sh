@@ -8,6 +8,7 @@ function setEnvVar {
     local envVarName=`echo "$1" | sed 's/[PMX_]+//g'`
     echo $"`sed  "/$envVarName=/d" "$ENV"`" > "$ENV"
     echo export $1=$2 >> "$ENV"
+    export $1=$2
 }
 
 function install_prometheus_agent() {
@@ -85,10 +86,14 @@ function deploy_cluster() {
 
     #Run Consul, Dray, Prometheus
     sed -i s/ADMIN_HOST_IP_ADDRESS/$admin_host_ip/g docker-compose-hydra.yml
+    sed -i s/ADMIN_HOST_IP_ADDRESS/$admin_host_ip/g alertmanager.conf
     docker-compose -f docker-compose-hydra.yml up -d
 
     #Switch back to admin machine
     eval "$(docker-machine env -u)"
+
+    #Start Hydra
+    ./hydrago &
 }
 
 function add_cluster_nodes() {
@@ -110,6 +115,9 @@ if [[ "$admin_op" == "create" ]]; then
 
         deploy_cluster
         setEnvVar "NODE_COUNT" "$node_count"
+        setEnvVar "SWARM_MASTER" "$sw_master"
+        setEnvVar "APP_BASE_FOLDER" "$(pwd)/apps"
+        setEnvVar "HYDRA_PORT" "8888"
     else
         echo -e "You need to run the admin script with \n\t./admin.sh create <DO api token> <admin host ip> <number of nodes>\n"
         exit 1;
