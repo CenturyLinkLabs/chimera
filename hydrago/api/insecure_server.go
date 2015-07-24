@@ -2,6 +2,7 @@ package api
 
 import (
 	"log"
+	"fmt"
 	"net/http"
 
 	"github.com/CenturyLinkLabs/hydra/hydrago/alert"
@@ -9,20 +10,22 @@ import (
 )
 
 type insecureServer struct {
-	Manager alert.Manager
+	Manager alert.AlertManager
 }
 
-// MakeInsecureServer returns a new Server instance containting a manager to which it will defer work.
-func MakeInsecureServer(am alert.Manager) Server {
+// MakeInsecureServer returns a new Server instance containing a manager to which it will defer work.
+func MakeInsecureServer(am alert.AlertManager) Server {
 	return insecureServer{
 		Manager: am,
 	}
 }
 
-func (s insecureServer) Start(addr string) {
+func (s insecureServer) Start(port string) {
 	r := s.newRouter()
 
-	log.Fatal(http.ListenAndServe(addr, r))
+	log.Printf("Server running on port: %s", port)
+	portString := fmt.Sprintf(":%s", port)
+	log.Fatal(http.ListenAndServe(portString, r))
 }
 
 func (s insecureServer) newRouter() *mux.Router {

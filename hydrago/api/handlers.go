@@ -3,17 +3,24 @@ package api
 import (
     "log"
     "net/http"
-    "github.com/CenturyLinkLabs/hydra/hydrago/alert"
-    "encoding/json")
+	"encoding/json"
 
-func HandleAlert(am alert.Manager, w http.ResponseWriter, r *http.Request) {
-    alert := &alert.Alert{}
+    "github.com/CenturyLinkLabs/hydra/hydrago/alert"
+)
+
+func UpDown(am alert.AlertManager, w http.ResponseWriter, r *http.Request) {
+	status := map[string]string{"status": "up"}
+	json.NewEncoder(w).Encode(status)
+}
+
+func ReceiveAlert(am alert.AlertManager, w http.ResponseWriter, r *http.Request) {
+    pan := &alert.PrometheusAlertNotification{}
     jd := json.NewDecoder(r.Body)
-    if err := jd.Decode(alert); err != nil {
+    if err := jd.Decode(pan); err != nil {
         log.Fatal(err)
     }
 
-    dr, err := am.HandleAlert(*alert)
+    dr, err := am.HandleAlert(*pan)
     if err != nil {
         log.Fatal(err)
     }
