@@ -35,5 +35,5 @@ type AlertResponse struct {
 	ID		int     `json:"id"`
 	Name	string  `json:"name"`
 	Status	string	`json:"status"`
-	PrometheusAlertNotification	PrometheusAlertNotification `json:"promAlertNotification,omitempty"`
+	PrometheusAlertNotification	PrometheusAlertNotification `json:"origAlertNotification,omitempty"`
 }
