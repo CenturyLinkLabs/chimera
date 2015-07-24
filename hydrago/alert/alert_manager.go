@@ -67,10 +67,12 @@ func restartService(svcName string) error {
     if len(names) < 2 {
         return errors.New(fmt.Sprintf("Invalid service name: %s", svcName))
     }
+
     cmd := fmt.Sprintf("eval \"$(docker-machine env --swarm %s)\" && " +
     "cd %s && docker-compose up --no-recreate -d && eval \"$(docker-machine env -u)\"",
     os.Getenv("SWARM_MASTER"), filepath.Join(os.Getenv("APP_BASE_FOLDER"), names[0]))
     _, err := exec.Command("bash", "-c", cmd).Output()
+
     if err != nil {
         return err
     }
@@ -82,15 +84,20 @@ func scaleService(svcName string, up bool) error {
     if len(names) < 3 {
         return errors.New(fmt.Sprintf("Invalid service name: %s", svcName))
     }
+
     cnt, e := strconv.Atoi(names[2])
     if e != nil {
         return e
     }
+
     if up {
         cnt = cnt + 1
-    } else {
+    } else if cnt > 1 {
         cnt = cnt -1
+    } else {
+        return nil
     }
+
     cmd := fmt.Sprintf("eval \"$(docker-machine env --swarm %s)\" && " +
     " cd %s &&  docker-compose scale %s=%d && " +
     " eval \"$(docker-machine env -u)\"",
@@ -100,5 +107,6 @@ func scaleService(svcName string, up bool) error {
     if err != nil {
         return err
     }
+
     return nil
 }
