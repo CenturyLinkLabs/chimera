@@ -1,25 +1,32 @@
 package main
 
 import (
+	"flag"
+	"os"
     "github.com/CenturyLinkLabs/hydra/hydrago/alert"
     "github.com/CenturyLinkLabs/hydra/hydrago/api"
-    "os"
 )
 
 func main() {
     am := alert.MakeAlertManager()
-    s := makeServer(am)
-    s.Start(serverPort())
-}
-
-func makeServer(dm alert.Manager) api.Server {
-    return api.MakeInsecureServer(dm)
+	s := api.MakeServer(am)
+	s.Start(serverPort())
 }
 
 func serverPort() string {
-    p := os.Getenv("SERVER_PORT")
-    if p == "" {
-        p = "3000"
-    }
-    return ":" + p
+	var portFlag string
+	flag.StringVar(&portFlag, "p", "", "port on which the server will run")
+
+	port := os.Getenv("HYDRA_PORT")
+
+	if port == "" {
+		flag.Parse()
+		port = portFlag
+	}
+
+	if port == "" {
+		// use the default port
+		port = "8888"
+	}
+	return port
 }

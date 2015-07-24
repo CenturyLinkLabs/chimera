@@ -13,31 +13,34 @@ import (
 type Server interface {
 	Start(string)
 	newRouter() *mux.Router
+	isAuthenticated(*http.Request) bool
 }
 
-func newRouter(am alert.Manager, isAuthenticated func(r *http.Request) bool) *mux.Router {
+func MakeServer(am alert.AlertManager) Server {
+	return MakeInsecureServer(am)
+}
+
+func newRouter(am alert.AlertManager, isAuthenticated func(r *http.Request) bool) *mux.Router {
 	r := mux.NewRouter()
 
 	for _, route := range routes {
 		fct := route.HandlerFunc
 		wrap := func(w http.ResponseWriter, r *http.Request) {
-
 			if !isAuthenticated(r) {
 				w.WriteHeader(http.StatusUnauthorized)
 				return
 			}
 
-			// make it json
+			// set json header
 			w.Header().Set("Content-Type", "application/json; charset=utf-8")
 
 			// log it
 			st := time.Now()
 
 			log.Printf(
-				"%s\t%s\t%s\t%s",
+				"Firing %s\t%s\t%s",
 				r.Method,
 				r.RequestURI,
-				route.Name,
 				time.Since(st),
 			)
 

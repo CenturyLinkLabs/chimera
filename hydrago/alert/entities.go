@@ -1,22 +1,39 @@
 package alert
 
-// Deployment represents a stored deployment.
+// PrometheusAlertNotification represents an alert notification from Prometheus.
+type PrometheusAlertNotification struct {
+	Version		string	`json:"version"`
+	Status		string	`json:"status"`
+	Alert		[]Alert	`json:"alert,omitempty"`
+}
+
 type Alert struct {
-	ID         int
-	Name       string
-	Template   string
+	Summary 	string	`json:"summary"`
+	Description	string	`json:"description"`
+	Labels		Labels	`json:"labels,omitempty"`
+	Payload		Payload	`json:"payload,omitempty"`
+}
+type Labels struct {
+	AlertName	string `json:"alertname"`
 }
 
-// A Manager is responsible for coordinating deployment related use cases.
-type Manager interface {
-	HandleAlert(Alert) (AlertResponse, error)
+type Payload struct {
+	ActiveSince 	string	`json:"activeSince"`
+	AlertingRule	string	`json:"alertingRule"`
+	GeneratorUrl	string	`json:"generatorURL"`
+	Value			string	`json:"value"`
 }
 
+// An AlertManager is responsible for coordinating Prometheus alerts sent to it.
+type AlertManager interface {
+	HandleAlert(PrometheusAlertNotification) (AlertResponse, error)
+}
 
-// AlertResponse is the minimal representation of a Deployment
+// AlertResponse is the minimal representation of an Alert
 // typically used for listings, etc.
 type AlertResponse struct {
-	ID           int      `json:"id"`
-	Name         string   `json:"name"`
-	ServiceIDs   []string `json:"service_ids"`
+	ID		int     `json:"id"`
+	Name	string  `json:"name"`
+	Status	string	`json:"status"`
+	PrometheusAlertNotification	PrometheusAlertNotification `json:"promAlertNotification,omitempty"`
 }
