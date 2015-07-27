@@ -1,12 +1,11 @@
 #!/bin/bash
 
-
 ENV=".hydra_env"
 admin_op=$1
 
 function setEnvVar {
-    local envVarName=`echo "$1" | sed 's/[PMX_]+//g'`
-    echo $"`sed  "/$envVarName=/d" "$ENV"`" > "$ENV"
+    local evn=`echo "$1" | sed 's/[PMX_]+//g'`
+    echo $"`sed  "/$evn=/d" "$ENV"`" > "$ENV"
     echo export $1=$2 >> "$ENV"
     export $1=$2
 }
@@ -42,7 +41,7 @@ function deploy_swarm_node() {
         -d digitalocean \
         --digitalocean-access-token $api_token \
         --digitalocean-private-networking \
-        --digitalocean-image="ubuntu-14-10-x64" \
+        --digitalocean-image="ubuntu-14-04-x64" \
         --swarm  $addl_flags \
 	    --swarm-discovery token://$SWARM_TOKEN \
         $id
