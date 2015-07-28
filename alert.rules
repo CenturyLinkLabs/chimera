@@ -21,7 +21,7 @@ ALERT container_up
 
 # Alert if containers memory usage is high
 ALERT container_high_memory_usage
-  IF container_memory_usage_bytes{job="hydra",name!~"^/system",name!~"^/user", name!~"^/",name!~"^PROM_",name!~"^swarm-",name!~"^DB"} > 10000000
+  IF container_memory_usage_bytes{job="hydra",name!~"^/system",name!~"^/user", name!~"^/",name!~"^PROM_",name!~"^swarm-",image="centurylink/wordpress:3.9.1"} > 10000000
   FOR 1m
   WITH {
     job="hydra"
