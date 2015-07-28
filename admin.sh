@@ -132,8 +132,8 @@ if [[ "$admin_op" == "create" ]]; then
         setEnvVar "PROVIDER" "$dm_host"
     elif [[ "$#" == "7" ]]; then
         dm_host="clc"
-        clc_uname=$3
-        clc_pwd=$4
+        clc_uname="$3"
+        clc_pwd="$4"
         clc_gid=$5
         admin_host_ip=$6
         node_count=$7
