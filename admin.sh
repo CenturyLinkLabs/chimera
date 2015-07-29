@@ -1,7 +1,5 @@
 #!/bin/bash
 
-set -e
-
 ENV=".hydra_env"
 admin_op=$1
 
@@ -39,19 +37,22 @@ function install_prometheus_agent() {
 function deploy_swarm_node() {
     id=$1
     addl_flags=$2
-    host_flags=""
+    cl_params=""
 
     if [[ "$dm_host" == "do" ]]; then
-        host_flags=" -d digitalocean --digitalocean-access-token $api_token --digitalocean-private-networking --digitalocean-image=\"ubuntu-14-04-x64\" "
+        cl_params=" -d digitalocean --digitalocean-access-token $api_token --digitalocean-private-networking --digitalocean-image=\"ubuntu-14-04-x64\" "
     elif [[ "$dm_host" == "clc" ]]; then
-        host_flags="-d centurylinkcloud --centurylinkcloud-group-id=$clc_gid --centurylinkcloud-private-address-only --centurylinkcloud-source-server-id=UBUNTU-14-64-TEMPLATE --centurylinkcloud-password=$clc_pwd --centurylinkcloud-username=$clc_uname "
+        cl_params=" -d centurylinkcloud \
+                --centurylinkcloud-group-id=$clc_gid \
+                --centurylinkcloud-private-address-only \
+                --centurylinkcloud-source-server-id=UBUNTU-14-64-TEMPLATE \
+                --centurylinkcloud-password='$clc_pwd' \
+                --centurylinkcloud-username='$clc_uname' "
     fi
 
-    docker-machine --debug create \
-        $host_flags \
-        --swarm  $addl_flags \
-	    --swarm-discovery token://$SWARM_TOKEN \
-        $id
+    cmd="docker-machine --debug create $cl_params  --swarm  $addl_flags  --swarm-discovery token://$SWARM_TOKEN  $id"
+
+    eval $cmd
 
     install_prometheus_agent $id
 }
