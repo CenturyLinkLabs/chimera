@@ -90,7 +90,7 @@ function deploy_cluster() {
     #Create Master
     deploy_swarm_node $sw_master " --swarm-master "
 
-    #Create Swarm Nodes
+    #Create Swarm Slaves
     for i in $(seq 1 $node_count); do
         deploy_swarm_node "$SWARM_PREFIX-$i"
     done
@@ -145,7 +145,7 @@ if [[ "$admin_op" == "create" ]]; then
         setEnvVar "HYDRA_PORT" "8888"
         setEnvVar "PROVIDER" "$dm_host"
     else
-        echo -e "You need to run the admin script with \n\t./admin.sh create [--DO <DO api token> | --CLC <clc username> <clc password> <clc data center group ID>]  <admin host ip> <number of nodes>\n"
+        echo -e "You need to run the admin script with \n\t./admin.sh create [--DO <DO api token> | --CLC <clc username> <clc password> <clc data center group ID>]  <admin host ip> <number of slaves>\n"
         exit 1;
     fi
 elif [[ "$admin_op" == "add" ]]; then
@@ -157,11 +157,11 @@ elif [[ "$admin_op" == "add" ]]; then
         setEnvVar "NODE_COUNT" "$(($node_count+$NODE_COUNT))"
         eval "$(docker-machine env -u)"
     else
-        echo -e "You need to run the admin script with \n\t./admin.sh add [--DO <DO api token> | --CLC <clc username> <clc password> <clc data center group ID>]  <number of nodes>\n"
+        echo -e "You need to run the admin script with \n\t./admin.sh add [--DO <DO api token> | --CLC <clc username> <clc password> <clc data center group ID>]  <number of slaves>\n"
         exit 1;
     fi
 else
-    echo -e "You need to run the admin script with \n\t./admin.sh create  [--DO <DO api token> | --CLC <clc username> <clc password> <clc data center group ID>] <admin host ip> <number of nodes> \
-                            \n\t OR ./admin.sh add [--DO <DO api token> | --CLC <clc username> <clc password> <clc data center group ID>] <number of nodes>\n"
+    echo -e "You need to run the admin script with \n\t./admin.sh create  [--DO <DO api token> | --CLC <clc username> <clc password> <clc data center group ID>] <admin host ip> <number of slaves> \
+                            \n\t OR ./admin.sh add [--DO <DO api token> | --CLC <clc username> <clc password> <clc data center group ID>] <number of slaves>\n"
     exit 1;
 fi
