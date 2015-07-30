@@ -1,13 +1,12 @@
 package api
 
 import (
-	"log"
 	"net/http"
 	"time"
 
 	"github.com/CenturyLinkLabs/hydra/hydrago/alert"
 	"github.com/gorilla/mux"
-)
+    "github.com/Sirupsen/logrus")
 
 // A Server is the HTTP server which responds to API requests.
 type Server interface {
@@ -37,7 +36,7 @@ func newRouter(am alert.AlertManager, isAuthenticated func(r *http.Request) bool
 			// log it
 			st := time.Now()
 
-			log.Printf(
+			logrus.Debugf(
 				"Firing %s\t%s\t%s",
 				r.Method,
 				r.RequestURI,

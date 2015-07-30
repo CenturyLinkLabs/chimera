@@ -3,13 +3,12 @@ package alert
 import (
     "errors"
     "fmt"
-    "log"
     "strings"
     "os"
     "path/filepath"
     "os/exec"
     "strconv"
-)
+    "github.com/Sirupsen/logrus")
 
 type promAlertManager struct { }
 
@@ -33,9 +32,9 @@ func (pam promAlertManager) HandleAlert(pan PrometheusAlertNotification) (AlertR
         err = processResolvedAlert(pan.Alert)
     }
 
-	if err == nil {
-		processingStatus = "success"
-	}
+    if err == nil {
+        processingStatus = "success"
+    }
 
     // send response back
     aResponse := AlertResponse{ID:1,
@@ -50,45 +49,44 @@ func (pam promAlertManager) HandleAlert(pan PrometheusAlertNotification) (AlertR
 }
 
 func processActiveAlert(alerts []Alert) error {
-	var newError, err error
+    var newError, err error
 
-	srvcName, alertName := parseAlert(alerts[0], "Active")
+    srvcName, alertName := parseAlert(alerts[0], "Active")
 
-	switch alertName {
-	case "container_up":
-		err = restartService(srvcName)
-	case "container_high_memory_usage", "container_high_cpu_usage":
-		err = scaleService(srvcName, true)
-	}
+    switch alertName {
+        case "container_up":
+        err = restartService(srvcName)
+        case "container_high_memory_usage", "container_high_cpu_usage":
+        err = scaleService(srvcName, true)
+    }
 
-	if err != nil {
-		newError = errors.New(fmt.Sprintf("Failed processing active alert '%s' for service '%s': '%s'", alertName, srvcName, err))
-	}
+    if err != nil {
+        newError = errors.New(fmt.Sprintf("Failed processing active alert '%s' for service '%s': '%s'", alertName, srvcName, err))
+    }
     return newError
 }
 
 func processResolvedAlert(alerts []Alert) error {
-	var newError, err error
+    var newError, err error
 
-	srvcName, alertName := parseAlert(alerts[0], "Resolved")
+    srvcName, alertName := parseAlert(alerts[0], "Resolved")
 
-	switch alertName {
-	case "container_high_memory_usage", "container_high_cpu_usage":
-		err = scaleService(srvcName, false)
-	}
+    switch alertName {
+        case "container_high_memory_usage", "container_high_cpu_usage":
+        err = scaleService(srvcName, false)
+    }
 
-	if err != nil {
-		newError = errors.New(fmt.Sprintf("Failed processing resolved alert '%s' for service '%s': '%s'", alertName, srvcName, err))
-	}
-	return newError
+    if err != nil {
+        newError = errors.New(fmt.Sprintf("Failed processing resolved alert '%s' for service '%s': '%s'", alertName, srvcName, err))
+    }
+    return newError
 }
 
 func parseAlert(alert Alert, message string) (string, string) {
-	srvcName := strings.Split(alert.Summary, " ")[1]
-	alertName := alert.Labels.AlertName
-	log.Printf("Handled %s - Service '%s' for Alert '%s'", message, srvcName, alertName)
-
-	return srvcName, alertName
+    srvcName := strings.Split(alert.Summary, " ")[1]
+    alertName := alert.Labels.AlertName
+    logrus.Debug("Handled %s - Service '%s' for Alert '%s'", message, srvcName, alertName)
+    return srvcName, alertName
 }
 
 
@@ -104,15 +102,17 @@ func restartService(svcName string) error {
 
     _, err := exec.Command("bash", "-c", cmd).Output()
 
-	log.Printf("restartService called: Service '%s' with Command '%s'", names[0], cmd)
+    logrus.Debug("restartService called: Service '%s' with Command '%s'", names[0], cmd)
+    logrus.Debug(err)
 
-	if err != nil {
+    if err != nil {
         return err
     }
     return nil
 }
 
 func scaleService(svcName string, up bool) error {
+    logrus.Debug("\nScaling Service: %s", svcName)
     names := strings.Split(svcName, "_")
     if len(names) < 3 {
         return errors.New(fmt.Sprintf("Invalid service name: %s", svcName))
@@ -138,11 +138,11 @@ func scaleService(svcName string, up bool) error {
 
     _, err := exec.Command("bash", "-c", cmd).Output()
 
-	log.Printf("scaleService called: App: '%s', Service '%s' for Count: %d with Command '%s' ", names[0], names[1], cnt, cmd)
+    logrus.Debug("\nScaleService called: App: '%s', Service '%s' for Count: %d with Command '%s' ", names[0], names[1], cnt, cmd)
+    logrus.Debug(err)
 
-	if err != nil {
+    if err != nil {
         return err
     }
-
     return nil
 }
