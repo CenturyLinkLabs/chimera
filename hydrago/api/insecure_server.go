@@ -22,7 +22,7 @@ func MakeInsecureServer(am alert.AlertManager) Server {
 func (s insecureServer) Start(port string) {
 	r := s.newRouter()
 
-	logrus.Debugf("Server running on port: %s", port)
+	fmt.Printf("Server running on port: %s", port)
 	portString := fmt.Sprintf(":%s", port)
 	logrus.Error(http.ListenAndServe(portString, r))
 }
