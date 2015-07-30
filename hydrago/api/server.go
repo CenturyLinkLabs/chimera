@@ -36,7 +36,7 @@ func newRouter(am alert.AlertManager, isAuthenticated func(r *http.Request) bool
 			// log it
 			st := time.Now()
 
-			logrus.Debugf(
+			logrus.Infof(
 				"Firing %s\t%s\t%s",
 				r.Method,
 				r.RequestURI,
