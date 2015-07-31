@@ -2,6 +2,8 @@
 
 ENV=".hydra_env"
 admin_op=$1
+create_prompt="./admin.sh create [--DO <DO api token> | --CLC <clc username> <clc password> <clc data center group ID>]  <admin host ip> <number of slaves>"
+add_prompt="./admin.sh add [--DO <DO api token> | --CLC <clc username> <clc password> <clc data center group ID>] <number of slaves>"
 
 function setEnvVar {
     local evn=`echo "$1" | sed 's/[PMX_]+//g'`
@@ -145,7 +147,7 @@ if [[ "$admin_op" == "create" ]]; then
         setEnvVar "HYDRA_PORT" "8888"
         setEnvVar "PROVIDER" "$dm_host"
     else
-        echo -e "You need to run the admin script with \n\t./admin.sh create [--DO <DO api token> | --CLC <clc username> <clc password> <clc data center group ID>]  <admin host ip> <number of slaves>\n"
+        echo -e "You need to run the admin script with \n\t$create_prompt\n"
         exit 1;
     fi
 elif [[ "$admin_op" == "add" ]]; then
@@ -157,11 +159,10 @@ elif [[ "$admin_op" == "add" ]]; then
         setEnvVar "NODE_COUNT" "$(($node_count+$NODE_COUNT))"
         eval "$(docker-machine env -u)"
     else
-        echo -e "You need to run the admin script with \n\t./admin.sh add [--DO <DO api token> | --CLC <clc username> <clc password> <clc data center group ID>]  <number of slaves>\n"
+        echo -e "You need to run the admin script with \n\t$add_prompt\n"
         exit 1;
     fi
 else
-    echo -e "You need to run the admin script with \n\t./admin.sh create  [--DO <DO api token> | --CLC <clc username> <clc password> <clc data center group ID>] <admin host ip> <number of slaves> \
-                            \n\t OR ./admin.sh add [--DO <DO api token> | --CLC <clc username> <clc password> <clc data center group ID>] <number of slaves>\n"
+    echo -e "You need to run the admin script with \n\t$create_prompt \n\t OR $add_prompt\n"
     exit 1;
 fi
