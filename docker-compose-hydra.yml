@@ -3,20 +3,20 @@
 #  ports:
 #   - "8500:8500"
 #  command: "-server -bootstrap"
-
-drayredis:
-   image: centurylink/redis:latest
-   ports:
-    - "6379:6379"
-
-dray:
-    image: centurylink/dray
-    volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock:rw"
-    ports:
-      - "3003:3000"
-    links:
-       - drayredis:redis
+#
+#drayredis:
+#   image: centurylink/redis:latest
+#   ports:
+#    - "6379:6379"
+#
+#dray:
+#    image: centurylink/dray
+#    volumes:
+#      - "/var/run/docker.sock:/var/run/docker.sock:rw"
+#    ports:
+#      - "3003:3000"
+#    links:
+#       - drayredis:redis
 
 promserver:
   image: prom/prometheus

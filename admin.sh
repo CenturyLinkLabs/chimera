@@ -1,13 +1,15 @@
 #!/bin/bash
 
-
 ENV=".hydra_env"
 admin_op=$1
+create_prompt="./admin.sh create [--DO <DO api token> | --CLC <clc username> <clc password> <clc data center group ID>]  <admin host ip> <number of slaves>"
+add_prompt="./admin.sh add [--DO <DO api token> | --CLC <clc username> <clc password> <clc data center group ID>] <number of slaves>"
 
 function setEnvVar {
-    local envVarName=`echo "$1" | sed 's/[PMX_]+//g'`
-    echo $"`sed  "/$envVarName=/d" "$ENV"`" > "$ENV"
+    local evn=`echo "$1" | sed 's/[PMX_]+//g'`
+    echo $"`sed  "/$evn=/d" "$ENV"`" > "$ENV"
     echo export $1=$2 >> "$ENV"
+    export $1=$2
 }
 
 function install_prometheus_agent() {
@@ -37,26 +39,37 @@ function install_prometheus_agent() {
 function deploy_swarm_node() {
     id=$1
     addl_flags=$2
-    docker-machine --debug create \
-        -d digitalocean \
-        --digitalocean-access-token $api_token \
-        --digitalocean-private-networking \
-        --digitalocean-image="ubuntu-14-10-x64" \
-        --swarm  $addl_flags \
-	    --swarm-discovery token://$SWARM_TOKEN \
-        $id
+    cl_params=""
+
+    if [[ "$dm_host" == "do" ]]; then
+        cl_params=" -d digitalocean --digitalocean-access-token $api_token --digitalocean-private-networking --digitalocean-image=\"ubuntu-14-04-x64\" "
+    elif [[ "$dm_host" == "clc" ]]; then
+        cl_params=" -d centurylinkcloud \
+                --centurylinkcloud-group-id=$clc_gid \
+                --centurylinkcloud-private-address-only \
+                --centurylinkcloud-source-server-id=UBUNTU-14-64-TEMPLATE \
+                --centurylinkcloud-password='$clc_pwd' \
+                --centurylinkcloud-username='$clc_uname' "
+    fi
+
+    cmd="docker-machine --debug create $cl_params  --swarm  $addl_flags  --swarm-discovery token://$SWARM_TOKEN  $id"
+
+    eval $cmd
 
     install_prometheus_agent $id
 }
 
 function deploy_cluster() {
     apt-get -y -q install wget unzip curl
+    touch $ENV
 
     #Install Docker
     wget -qO- https://get.docker.com/ | sh
 
     #Install Docker-Machine
-    curl -L https://github.com/docker/machine/releases/download/v0.3.0/docker-machine_linux-amd64 > /usr/local/bin/docker-machine
+    #curl -L https://github.com/docker/machine/releases/download/v0.3.0/docker-machine_linux-amd64 > /usr/local/bin/docker-machine
+    #Installing custom docker machine built with clc integration
+    cp bin/docker-machine_linux-amd64 /usr/local/bin/docker-machine
     chmod +x /usr/local/bin/docker-machine
 
     #Install Docker-Compose
@@ -74,21 +87,26 @@ function deploy_cluster() {
     SWARM_PREFIX="`cat /dev/urandom | tr -dc 'a-z' | fold -w 6 | head -n 1`"
     setEnvVar "SWARM_PREFIX" "$SWARM_PREFIX"
     sw_master="$SWARM_PREFIX-m"
+    setEnvVar "SWARM_MASTER" "$sw_master"
 
     #Create Master
     deploy_swarm_node $sw_master " --swarm-master "
 
-    #Create Swarm Nodes
+    #Create Swarm Slaves
     for i in $(seq 1 $node_count); do
         deploy_swarm_node "$SWARM_PREFIX-$i"
     done
 
     #Run Consul, Dray, Prometheus
     sed -i s/ADMIN_HOST_IP_ADDRESS/$admin_host_ip/g docker-compose-hydra.yml
+    sed -i s/ADMIN_HOST_IP_ADDRESS/$admin_host_ip/g alertmanager.conf
     docker-compose -f docker-compose-hydra.yml up -d
 
     #Switch back to admin machine
     eval "$(docker-machine env -u)"
+
+    #Start Hydra
+    source $ENV && cd bin && ./hydrago &
 }
 
 function add_cluster_nodes() {
@@ -103,31 +121,48 @@ function add_cluster_nodes() {
 }
 
 if [[ "$admin_op" == "create" ]]; then
-    if [[ "$#" == "4" ]]; then
-        api_token=$2
-        admin_host_ip=$3
-        node_count=$4
+    if [[ "$#" == "5" ]]; then
+        dm_host="do"
+        api_token=$3
+        admin_host_ip=$4
+        node_count=$5
 
         deploy_cluster
         setEnvVar "NODE_COUNT" "$node_count"
+        setEnvVar "SWARM_MASTER" "$sw_master"
+        setEnvVar "APP_BASE_FOLDER" "$(pwd)/apps"
+        setEnvVar "HYDRA_PORT" "8888"
+        setEnvVar "PROVIDER" "$dm_host"
+    elif [[ "$#" == "7" ]]; then
+        dm_host="clc"
+        clc_uname="$3"
+        clc_pwd="$4"
+        clc_gid=$5
+        admin_host_ip=$6
+        node_count=$7
+
+        deploy_cluster
+        setEnvVar "NODE_COUNT" "$node_count"
+        setEnvVar "APP_BASE_FOLDER" "$(pwd)/apps"
+        setEnvVar "HYDRA_PORT" "8888"
+        setEnvVar "PROVIDER" "$dm_host"
     else
-        echo -e "You need to run the admin script with \n\t./admin.sh create <DO api token> <admin host ip> <number of nodes>\n"
+        echo -e "You need to run the admin script with \n\t$create_prompt\n"
         exit 1;
     fi
 elif [[ "$admin_op" == "add" ]]; then
     if [[ "$#" == "3" ]]; then
         api_token=$2
         node_count=$3
-        source .hydra_env
+        source $ENV
         add_cluster_nodes
         setEnvVar "NODE_COUNT" "$(($node_count+$NODE_COUNT))"
         eval "$(docker-machine env -u)"
     else
-        echo -e "You need to run the admin script with \n\t./admin.sh add <DO api token> <number of nodes>\n"
+        echo -e "You need to run the admin script with \n\t$add_prompt\n"
         exit 1;
     fi
 else
-    echo -e "You need to run the admin script with \n\t./admin.sh create <DO api token> <admin host ip> <number of nodes> \
-                            \n\t OR ./admin.sh add <DO api token> <number of nodes>\n"
+    echo -e "You need to run the admin script with \n\t$create_prompt \n\t OR $add_prompt\n"
     exit 1;
 fi
