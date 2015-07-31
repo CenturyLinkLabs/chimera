@@ -43,7 +43,7 @@ func (pam promAlertManager) HandleAlert(pan PrometheusAlertNotification) (AlertR
         PrometheusAlertNotification: pan,
     }
     if err != nil {
-        newError = errors.New(fmt.Sprintf("Processing alert failed: '%s'", err))
+        newError = errors.New(fmt.Sprintf("\nProcessing alert failed: '%s'", err))
     }
     return aResponse, newError
 }
@@ -54,14 +54,14 @@ func processActiveAlert(alerts []Alert) error {
     srvcName, alertName := parseAlert(alerts[0], "Active")
 
     switch alertName {
-        case "container_up":
+        case "container_down":
         err = restartService(srvcName)
         case "container_high_memory_usage", "container_high_cpu_usage":
         err = scaleService(srvcName, true)
     }
 
     if err != nil {
-        newError = errors.New(fmt.Sprintf("Failed processing active alert '%s' for service '%s': '%s'", alertName, srvcName, err))
+        newError = errors.New(fmt.Sprintf("\nFailed processing active alert '%s' for service '%s': '%s'", alertName, srvcName, err))
     }
     return newError
 }
@@ -77,7 +77,7 @@ func processResolvedAlert(alerts []Alert) error {
     }
 
     if err != nil {
-        newError = errors.New(fmt.Sprintf("Failed processing resolved alert '%s' for service '%s': '%s'", alertName, srvcName, err))
+        newError = errors.New(fmt.Sprintf("\nFailed processing resolved alert '%s' for service '%s': '%s'", alertName, srvcName, err))
     }
     return newError
 }
@@ -85,7 +85,7 @@ func processResolvedAlert(alerts []Alert) error {
 func parseAlert(alert Alert, message string) (string, string) {
     srvcName := strings.Split(alert.Summary, " ")[1]
     alertName := alert.Labels.AlertName
-    logrus.Debug("Handled %s - Service '%s' for Alert '%s'", message, srvcName, alertName)
+    logrus.Debug("\nHandled %s - Service '%s' for Alert '%s'", message, srvcName, alertName)
     return srvcName, alertName
 }
 
@@ -93,7 +93,7 @@ func parseAlert(alert Alert, message string) (string, string) {
 func restartService(svcName string) error {
     names := strings.Split(svcName, "_")
     if len(names) < 2 {
-        return errors.New(fmt.Sprintf("Invalid service name: '%s'", svcName))
+        return errors.New(fmt.Sprintf("\nInvalid service name: '%s'", svcName))
     }
 
     cmd := fmt.Sprintf("eval \"$(docker-machine env --swarm %s)\" && " +
@@ -102,7 +102,7 @@ func restartService(svcName string) error {
 
     _, err := exec.Command("bash", "-c", cmd).Output()
 
-    logrus.Debug("restartService called: Service '%s' with Command '%s'", names[0], cmd)
+    logrus.Debug("\nrestartService called: Service '%s' with Command '%s'", names[0], cmd)
     logrus.Debug(err)
 
     if err != nil {
@@ -112,10 +112,10 @@ func restartService(svcName string) error {
 }
 
 func scaleService(svcName string, up bool) error {
-    logrus.Debug("\nScaling Service: %s", svcName)
+    logrus.Debug("\nScaling Service: '%s'", svcName)
     names := strings.Split(svcName, "_")
     if len(names) < 3 {
-        return errors.New(fmt.Sprintf("Invalid service name: %s", svcName))
+        return errors.New(fmt.Sprintf("\nInvalid service name: '%s'", svcName))
     }
 
     cnt, e := strconv.Atoi(names[2])
