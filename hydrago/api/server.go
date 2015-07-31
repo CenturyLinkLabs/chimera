@@ -4,9 +4,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/CenturyLinkLabs/hydra/hydrago/alert"
 	"github.com/gorilla/mux"
-    "fmt")
+	"github.com/CenturyLinkLabs/hydra/hydrago/alert"
+	log "github.com/Sirupsen/logrus"
+)
 
 // A Server is the HTTP server which responds to API requests.
 type Server interface {
@@ -36,7 +37,7 @@ func newRouter(am alert.AlertManager, isAuthenticated func(r *http.Request) bool
 			// log it
 			st := time.Now()
 
-			fmt.Printf(
+			log.Infof(
 				"Firing %s\t%s\t%s",
 				r.Method,
 				r.RequestURI,

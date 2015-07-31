@@ -8,7 +8,9 @@ import (
     "path/filepath"
     "os/exec"
     "strconv"
-    "github.com/Sirupsen/logrus")
+
+    log "github.com/Sirupsen/logrus"
+)
 
 type promAlertManager struct { }
 
@@ -85,7 +87,7 @@ func processResolvedAlert(alerts []Alert) error {
 func parseAlert(alert Alert, message string) (string, string) {
     srvcName := strings.Split(alert.Summary, " ")[1]
     alertName := alert.Labels.AlertName
-    logrus.Debug("\nHandled %s - Service '%s' for Alert '%s'", message, srvcName, alertName)
+    log.Debugf("\nHandled %s - Service '%s' for Alert '%s'", message, srvcName, alertName)
     return srvcName, alertName
 }
 
@@ -102,17 +104,17 @@ func restartService(svcName string) error {
 
     _, err := exec.Command("bash", "-c", cmd).Output()
 
-    logrus.Debug("\nrestartService called: Service '%s' with Command '%s'", names[0], cmd)
-    logrus.Debug(err)
+    log.Debugf("\nrestartService called: Service '%s' with Command '%s'", names[0], cmd)
 
     if err != nil {
+		log.Error(err)
         return err
     }
     return nil
 }
 
 func scaleService(svcName string, up bool) error {
-    logrus.Debug("\nScaling Service: '%s'", svcName)
+    log.Debugf("\nScaling Service: '%s'", svcName)
     names := strings.Split(svcName, "_")
     if len(names) < 3 {
         return errors.New(fmt.Sprintf("\nInvalid service name: '%s'", svcName))
@@ -138,10 +140,10 @@ func scaleService(svcName string, up bool) error {
 
     _, err := exec.Command("bash", "-c", cmd).Output()
 
-    logrus.Debug("\nScaleService called: App: '%s', Service '%s' for Count: %d with Command '%s' ", names[0], names[1], cnt, cmd)
-    logrus.Debug(err)
+    log.Debugf("\nScaleService called: App: '%s', Service '%s' for Count: %d with Command '%s' ", names[0], names[1], cnt, cmd)
 
     if err != nil {
+		log.Error(err)
         return err
     }
     return nil
