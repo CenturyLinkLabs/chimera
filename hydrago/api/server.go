@@ -1,4 +1,4 @@
-package api
+package api // import "github.com/CenturyLinkLabs/hydra/hydrago/api"
 
 import (
 	"net/http"

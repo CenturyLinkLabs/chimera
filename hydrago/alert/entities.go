@@ -1,4 +1,4 @@
-package alert
+package alert // import "github.com/CenturyLinkLabs/hydra/hydrago/alert"
 
 // PrometheusAlertNotification represents an alert notification from Prometheus.
 type PrometheusAlertNotification struct {
