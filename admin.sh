@@ -2,14 +2,24 @@
 
 ENV=".hydra_env"
 admin_op=$1
-create_prompt="./admin.sh create [--DO <DO api token> | --CLC <clc username> <clc password> <clc data center group ID>]  <admin host ip> <number of slaves>"
-add_prompt="./admin.sh add [--DO <DO api token> | --CLC <clc username> <clc password> <clc data center group ID>] <number of slaves>"
+create_prompt="./admin.sh create [--CLC <clc username> <clc password> <clc data center group ID> | --DO <DO API token> ] <admin private IP> <number of minions>"
+add_prompt="./admin.sh add [--CLC <clc username> <clc password> <clc data center group ID> | --DO <DO API token> ] <number of minions>"
 
 function setEnvVar {
-    local evn=`echo "$1" | sed 's/[PMX_]+//g'`
-    echo $"`sed  "/$evn=/d" "$ENV"`" > "$ENV"
-    echo export $1=$2 >> "$ENV"
+    local evn=$1
+    sed  -i "/$evn=/d" "$ENV"
+    echo "export $1=$2" >> "$ENV"
     export $1=$2
+}
+
+function cleanup_old_install() {
+    if [[ "$(docker ps -aq)" != "" ]]; then
+        docker rm -f "$(docker ps -aq)"
+    fi
+    if [[ "$(docker-machine ls -q)" != "" ]]; then
+        docker-machine rm -f "$(docker-machine ls -q)"
+    fi
+    pkill hydrago
 }
 
 function install_prometheus_agent() {
@@ -30,10 +40,10 @@ function install_prometheus_agent() {
 
     eval "$(docker-machine env -u)"
     tmp_ip=$(docker-machine ip $id)
-    cur=$(grep targets.*: prometheus.yml)
-    new=$(echo $cur | sed s/]/", \'$tmp_ip:9100\', \'$tmp_ip:9104\']"/g)
-    sed -i s/"-.*targets:.*]"/"$new"/g prometheus.yml
-    sed -i s/"targets:.*\[,"/"targets: ["/g prometheus.yml
+    cur=$(grep "targets.*:" prometheus.yml)
+    new=${cur//]/", \'$tmp_ip:9100\', \'$tmp_ip:9104\']"}
+    sed -i s/-.*targets:.*]/"$new"/g prometheus.yml
+    sed -i s/targets:.*\[,/"targets: ["/g prometheus.yml
 }
 
 function deploy_swarm_node() {
@@ -42,7 +52,10 @@ function deploy_swarm_node() {
     cl_params=""
 
     if [[ "$dm_host" == "do" ]]; then
-        cl_params=" -d digitalocean --digitalocean-access-token $api_token --digitalocean-private-networking --digitalocean-image=\"ubuntu-14-04-x64\" "
+        cl_params=" -d digitalocean \
+                    --digitalocean-access-token $api_token \
+                    --digitalocean-private-networking \
+                    --digitalocean-image='ubuntu-14-04-x64' "
     elif [[ "$dm_host" == "clc" ]]; then
         cl_params=" -d centurylinkcloud \
                 --centurylinkcloud-group-id=$clc_gid \
@@ -52,7 +65,10 @@ function deploy_swarm_node() {
                 --centurylinkcloud-username='$clc_uname' "
     fi
 
-    cmd="docker-machine --debug create $cl_params  --swarm  $addl_flags  --swarm-discovery token://$SWARM_TOKEN  $id"
+    cmd="docker-machine --debug \
+             create $cl_params  \
+            --swarm  $addl_flags  \
+            --swarm-discovery token://$SWARM_TOKEN  $id"
 
     eval $cmd
 
@@ -73,18 +89,17 @@ function deploy_cluster() {
     chmod +x /usr/local/bin/docker-machine
 
     #Install Docker-Compose
-    curl -L https://github.com/docker/compose/releases/download/1.3.1/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose
+    curl -L https://github.com/docker/compose/releases/download/1.3.1/docker-compose-$(uname -s)-$(uname -m) > /usr/local/bin/docker-compose
     chmod +x /usr/local/bin/docker-compose
 
-    #Cleanup old containers if there are any
-    docker rm -f `docker ps -aq`
-    docker-machine rm -f `docker-machine ls | awk '{print $1}'`
+    #Cleanup old install/containers/docker-machine
+    cleanup_old_install
 
     #Create Swarm Token
-    export SWARM_TOKEN=$(docker run swarm create)
+    SWARM_TOKEN=$(docker run swarm create)
     setEnvVar "SWARM_TOKEN" "$SWARM_TOKEN"
 
-    SWARM_PREFIX="`cat /dev/urandom | tr -dc 'a-z' | fold -w 6 | head -n 1`"
+    SWARM_PREFIX="$(cat /dev/urandom | tr -dc 'a-z' | fold -w 4 | head -n 1)"
     setEnvVar "SWARM_PREFIX" "$SWARM_PREFIX"
     sw_master="$SWARM_PREFIX-m"
     setEnvVar "SWARM_MASTER" "$sw_master"
@@ -92,18 +107,18 @@ function deploy_cluster() {
     #Create Master
     deploy_swarm_node $sw_master " --swarm-master "
 
-    #Create Swarm Slaves
+    #Create Swarm Minions
     for i in $(seq 1 $node_count); do
         deploy_swarm_node "$SWARM_PREFIX-$i"
     done
 
-    #Run Consul, Dray, Prometheus
+    #Switch back to admin machine
+    eval "$(docker-machine env -u)"
+
+    #Run Containers needed for cluster management
     sed -i s/ADMIN_HOST_IP_ADDRESS/$admin_host_ip/g docker-compose-hydra.yml
     sed -i s/ADMIN_HOST_IP_ADDRESS/$admin_host_ip/g alertmanager.conf
     docker-compose -f docker-compose-hydra.yml up -d
-
-    #Switch back to admin machine
-    eval "$(docker-machine env -u)"
 
     #Start Hydra
     source $ENV && cd bin && ./hydrago &
