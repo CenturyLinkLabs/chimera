@@ -1,20 +1,13 @@
-WP:
-  image: "centurylink/wordpress:3.9.1"
-  links:
-    - "DB:DB_1"
+HAPROXY:
+  image: bfirsh/interlock-haproxy-swarm
+  ports:
+    - 8010:8080
+  environment:
+    - DOCKER_HOST
+  volumes:
+    - /etc/docker:/etc/docker
+Web:
+  image: "centurylink/lighttpd"
   ports:
     - ":80"
-  environment:
-    - "DB_PASSWORD=pass@word01"
-    - DB_NAME=wordpress
-  dns:
-    - 8.8.8.8
-    - 9.9.9.9
-  hostname: wordpress
-  domainname: wordpress.mysite.com
-DB:
-  image: "centurylink/mysql:5.5"
-  ports:
-    - ":3306"
-  environment:
-    - "MYSQL_ROOT_PASSWORD=pass@word01"
+  hostname: wordpress.wordpress.mysite.com
