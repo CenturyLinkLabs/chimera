@@ -26,7 +26,7 @@ type Payload struct {
 
 // An AlertManager is responsible for coordinating Prometheus alerts sent to it.
 type AlertManager interface {
-	HandleAlert(PrometheusAlertNotification) (AlertResponse, error)
+	HandleAlert(PrometheusAlertNotification) []AlertResponse
 }
 
 // AlertResponse is the minimal representation of an Alert
@@ -35,5 +35,5 @@ type AlertResponse struct {
 	ID		int     `json:"id"`
 	Name	string  `json:"name"`
 	Status	string	`json:"status"`
-	PrometheusAlertNotification	PrometheusAlertNotification `json:"origAlertNotification,omitempty"`
+	Alert	Alert 	`json:"alert,omitempty"`
 }

@@ -19,14 +19,11 @@ func ReceiveAlert(am alert.AlertManager, w http.ResponseWriter, r *http.Request)
         logrus.Debug(err)
     }
 
-    dr, err := am.HandleAlert(*pan)
+    dr := am.HandleAlert(*pan)
+
+    drj, err := json.Marshal(dr)
     if err != nil {
         logrus.Debug(err)
-    }
-
-    drj, errr := json.Marshal(dr)
-    if errr != nil {
-        logrus.Debug(errr)
     }
 
     w.WriteHeader(http.StatusCreated)

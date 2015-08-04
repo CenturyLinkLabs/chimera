@@ -20,77 +20,80 @@ func MakeAlertManager() AlertManager {
 }
 
 // HandleAlert handles an Alert, processes it, and sends back an AlertResponse.
-func (pam promAlertManager) HandleAlert(pan PrometheusAlertNotification) (AlertResponse, error) {
-    var processingStatus string = "failure"
-    var newError error
+func (pam promAlertManager) HandleAlert(pan PrometheusAlertNotification) []AlertResponse {
     var err error
 
-    // extract Alert payload from the notification
-    if pan.Status == "firing" {
-        // process the active Alert
-        err = processActiveAlert(pan.Alert)
-    } else {
-        // process the resolved Alert
-        err = processResolvedAlert(pan.Alert)
-    }
+	alerts := pan.Alert
 
-    if err == nil {
-        processingStatus = "success"
-    }
+	aResponses := []AlertResponse{}
 
-    // send response back
-    aResponse := AlertResponse{ID:1,
-        Name: "Handling_" + pan.Alert[0].Labels.AlertName,
-        Status: processingStatus,
-        PrometheusAlertNotification: pan,
-    }
-    if err != nil {
-        newError = errors.New(fmt.Sprintf("\nProcessing alert failed: '%s'", err))
-    }
-    return aResponse, newError
+    // send response(s) back for each alert
+	for i := range alerts {
+		var processingStatus string = "failure"
+
+		// extract Alert payload from the notification
+		if pan.Status == "firing" {
+			// process the active Alert
+			err = processActiveAlert(alerts[i])
+		} else {
+			// process the resolved Alert
+			err = processResolvedAlert(alerts[i])
+		}
+
+		if err == nil {
+			processingStatus = "success"
+		}
+
+		aResponses = append(aResponses, AlertResponse{ID:1,
+				Name: "Handled alert: '" + alerts[i].Labels.AlertName + "'",
+				Status: processingStatus,
+				Alert: alerts[i],
+			})
+
+		if err != nil {
+			log.Error(err)
+		}
+	}
+    return aResponses
 }
 
-func processActiveAlert(alerts []Alert) error {
-    var newError, err error
+func processActiveAlert(alert Alert) error {
+	var err error
 
-    srvcName, alertName := parseAlert(alerts[0], "Active")
+	srvcName, alertName := parseAlert(alert)
 
-    switch alertName {
-        case "container_down":
-        err = restartService(srvcName)
-        case "container_high_memory_usage", "container_high_cpu_usage":
-        err = scaleService(srvcName, true)
-    }
+	log.Debugf("Processing Active Alert '%s' for Service name '%s'", alertName, srvcName)
 
-    if err != nil {
-        newError = errors.New(fmt.Sprintf("\nFailed processing active alert '%s' for service '%s': '%s'", alertName, srvcName, err))
-    }
-    return newError
+	switch alertName {
+	case "container_down":
+		err = restartService(srvcName)
+	case "container_high_memory_usage", "container_high_cpu_usage":
+		err = scaleService(srvcName, true)
+	}
+
+    return err
 }
 
-func processResolvedAlert(alerts []Alert) error {
-    var newError, err error
+func processResolvedAlert(alert Alert) error {
+    var err error
 
-    srvcName, alertName := parseAlert(alerts[0], "Resolved")
+	srvcName, alertName := parseAlert(alert)
 
-    switch alertName {
-        case "container_high_memory_usage", "container_high_cpu_usage":
-        err = scaleService(srvcName, false)
-    }
+	log.Debugf("Processing Resolved Alert '%s' for Service name '%s'", alertName, srvcName)
 
-    if err != nil {
-        newError = errors.New(fmt.Sprintf("\nFailed processing resolved alert '%s' for service '%s': '%s'", alertName, srvcName, err))
-    }
-    return newError
+	switch alertName {
+	case "container_high_memory_usage", "container_high_cpu_usage":
+		err = scaleService(srvcName, false)
+	}
+
+    return err
 }
 
-func parseAlert(alert Alert, message string) (string, string) {
+func parseAlert(alert Alert) (string, string) {
     srvcName := strings.Split(alert.Summary, " ")[1]
     alertName := alert.Labels.AlertName
-    log.Debugf("\nHandled %s - Service '%s' for Alert '%s'", message, srvcName, alertName)
     return srvcName, alertName
 }
-
 
 func restartService(svcName string) error {
     names := strings.Split(svcName, "_")
@@ -104,17 +107,15 @@ func restartService(svcName string) error {
 
     _, err := exec.Command("bash", "-c", cmd).Output()
 
-    log.Debugf("\nrestartService called: Service '%s' with Command '%s'", names[0], cmd)
+    log.Debugf("restartService called: Service '%s' with Command '%s'", names[0], cmd)
 
     if err != nil {
-		log.Error(err)
         return err
     }
     return nil
 }
 
 func scaleService(svcName string, up bool) error {
-    log.Debugf("\nScaling Service: '%s'", svcName)
     names := strings.Split(svcName, "_")
     if len(names) < 3 {
         return errors.New(fmt.Sprintf("\nInvalid service name: '%s'", svcName))
@@ -140,10 +141,9 @@ func scaleService(svcName string, up bool) error {
 
     _, err := exec.Command("bash", "-c", cmd).Output()
 
-    log.Debugf("\nScaleService called: App: '%s', Service '%s' for Count: %d with Command '%s' ", names[0], names[1], cnt, cmd)
+    log.Debugf("scaleService called: App: '%s', Service '%s' for Count: %d with Command '%s' ", names[0], names[1], cnt, cmd)
 
     if err != nil {
-		log.Error(err)
         return err
     }
     return nil
