@@ -3,7 +3,7 @@
 # Alert for any instance that is unreachable for >5 minutes.
 ALERT hydra_up_down
   IF up == 0
-  FOR 1m
+  FOR 10s
   WITH {
     severity="page"
   }
@@ -12,7 +12,7 @@ ALERT hydra_up_down
 # Alert if containers is stopped
 ALERT container_down
   IF time() - container_last_seen{name=~"^app"} > 10
-  FOR 1m
+  FOR 10s
   WITH {
     job="hydra"
   }
@@ -22,7 +22,7 @@ ALERT container_down
 # Alert if containers memory usage is high
 ALERT container_high_memory_usage
   IF container_memory_usage_bytes{job="hydra",name=~"^app"} > 5000000
-  FOR 1m
+  FOR 10s
   WITH {
     job="hydra"
   }

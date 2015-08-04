@@ -77,6 +77,11 @@ function deploy_swarm_node() {
 }
 
 function deploy_cluster() {
+    setEnvVar "NODE_COUNT" "$node_count"
+    setEnvVar "APP_BASE_FOLDER" "$(pwd)/apps"
+    setEnvVar "HYDRA_PORT" "8888"
+    setEnvVar "PROVIDER" "$dm_host"
+
     apt-get -y -q install wget unzip curl
     touch $ENV
 
@@ -145,11 +150,6 @@ if [[ "$admin_op" == "create" ]]; then
         node_count=$5
 
         deploy_cluster
-        setEnvVar "NODE_COUNT" "$node_count"
-        setEnvVar "SWARM_MASTER" "$sw_master"
-        setEnvVar "APP_BASE_FOLDER" "$(pwd)/apps"
-        setEnvVar "HYDRA_PORT" "8888"
-        setEnvVar "PROVIDER" "$dm_host"
     elif [[ "$#" == "8" ]]; then
         dm_host="clc"
         clc_uname="$3"
@@ -160,10 +160,6 @@ if [[ "$admin_op" == "create" ]]; then
         node_count=$8
 
         deploy_cluster
-        setEnvVar "NODE_COUNT" "$node_count"
-        setEnvVar "APP_BASE_FOLDER" "$(pwd)/apps"
-        setEnvVar "HYDRA_PORT" "8888"
-        setEnvVar "PROVIDER" "$dm_host"
     else
         echo -e "You need to run the admin script with \n\t$create_prompt\n"
         exit 1;
