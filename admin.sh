@@ -2,7 +2,7 @@
 
 ENV=".hydra_env"
 admin_op=$1
-create_prompt="./admin.sh create [--CLC <clc username> <clc password> <clc data center group ID> | --DO <DO API token> ] <admin private IP> <number of minions>"
+create_prompt="./admin.sh create [--CLC <clc username> <clc password> <clc data center group ID> <clc network id>| --DO <DO API token> ] <admin private IP> <number of minions>"
 add_prompt="./admin.sh add [--CLC <clc username> <clc password> <clc data center group ID> | --DO <DO API token> ] <number of minions>"
 
 function setEnvVar {
@@ -14,10 +14,10 @@ function setEnvVar {
 
 function cleanup_old_install() {
     if [[ "$(docker ps -aq)" != "" ]]; then
-        docker rm -f "$(docker ps -aq)"
+        docker rm -f `docker ps -aq`
     fi
     if [[ "$(docker-machine ls -q)" != "" ]]; then
-        docker-machine rm -f "$(docker-machine ls -q)"
+        docker-machine rm -f `docker-machine ls -q`
     fi
     pkill hydrago
 }
@@ -40,10 +40,10 @@ function install_prometheus_agent() {
 
     eval "$(docker-machine env -u)"
     tmp_ip=$(docker-machine ip $id)
-    cur=$(grep "targets.*:" prometheus.yml)
-    new=${cur//]/", \'$tmp_ip:9100\', \'$tmp_ip:9104\']"}
-    sed -i s/-.*targets:.*]/"$new"/g prometheus.yml
-    sed -i s/targets:.*\[,/"targets: ["/g prometheus.yml
+    cur=$(grep targets.*: prometheus.yml)
+    new=$(echo $cur | sed s/]/", \'$tmp_ip:9100\', \'$tmp_ip:9104\']"/g)
+    sed -i s/"-.*targets:.*]"/"$new"/g prometheus.yml
+    sed -i s/"targets:.*\[,"/"targets: ["/g prometheus.yml
 }
 
 function deploy_swarm_node() {
@@ -62,7 +62,8 @@ function deploy_swarm_node() {
                 --centurylinkcloud-private-address-only \
                 --centurylinkcloud-source-server-id=UBUNTU-14-64-TEMPLATE \
                 --centurylinkcloud-password='$clc_pwd' \
-                --centurylinkcloud-username='$clc_uname' "
+                --centurylinkcloud-username='$clc_uname' \
+                --centurylinkcloud-network-id=$clc_nid "
     fi
 
     cmd="docker-machine --debug \
@@ -148,13 +149,14 @@ if [[ "$admin_op" == "create" ]]; then
         setEnvVar "APP_BASE_FOLDER" "$(pwd)/apps"
         setEnvVar "HYDRA_PORT" "8888"
         setEnvVar "PROVIDER" "$dm_host"
-    elif [[ "$#" == "7" ]]; then
+    elif [[ "$#" == "8" ]]; then
         dm_host="clc"
         clc_uname="$3"
         clc_pwd="$4"
         clc_gid=$5
-        admin_host_ip=$6
-        node_count=$7
+        clc_nid=$6
+        admin_host_ip=$7
+        node_count=$8
 
         deploy_cluster
         setEnvVar "NODE_COUNT" "$node_count"
