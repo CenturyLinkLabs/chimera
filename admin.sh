@@ -122,6 +122,7 @@ function deploy_cluster() {
     docker-compose -f docker-compose-hydra.yml up -d
 
     #Start Hydra
+    setEnvVar "LOG_LEVEL" "DEBUG"
     source $ENV && cd bin && ./hydrago &
 }
 
