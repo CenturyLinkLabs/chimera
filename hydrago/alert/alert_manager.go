@@ -31,6 +31,8 @@ func (pam promAlertManager) HandleAlert(pan PrometheusAlertNotification) []Alert
 	for i := range alerts {
 		var processingStatus string = "failure"
 
+		log.Debugf("Processing Alert: ", alerts[i])
+
 		// extract Alert payload from the notification
 		if pan.Status == "firing" {
 			// process the active Alert
