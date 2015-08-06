@@ -67,7 +67,7 @@ func processActiveAlert(alert Alert) error {
 	switch alertName {
 	case "container_down":
 		err = restartService(srvcName)
-	case "container_high_memory_usage", "container_high_cpu_usage":
+	case "container_high_memory_usage", "container_high_cpu_usage", "container_high_http_load":
 		err = scaleService(srvcName, true)
 	}
 
@@ -82,7 +82,7 @@ func processResolvedAlert(alert Alert) error {
 	log.Debugf("Processing Resolved Alert '%s' for Service name '%s'", alertName, srvcName)
 
 	switch alertName {
-	case "container_high_memory_usage", "container_high_cpu_usage":
+	case "container_high_memory_usage", "container_high_cpu_usage", "container_high_http_load":
 		err = scaleService(srvcName, false)
 	}
 
