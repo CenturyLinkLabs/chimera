@@ -35,5 +35,5 @@ ALERT container_high_http_load
   WITH {
     job="hydra"
   }
-  SUMMARY "Service {{$labels.name}} has high http requests load"
-  DESCRIPTION "{{$labels.instance}} of service {{$labels.name}} has http request load  > 30 for more than 1 minute."
+  SUMMARY "Service {{$labels.server}} has high http requests load"
+  DESCRIPTION "{{$labels.instance}} of service {{$labels.server}} has http request load  > 30 for more than 1 minute."
