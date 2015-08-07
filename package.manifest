@@ -2,8 +2,8 @@
 <Manifest>
     <Metadata>
         <UUID>7F28A4BA-89C0-46AD-9071-62489595384C</UUID>
-        <Name>Install Hydra Cluster</Name>
-        <Description>Installs Hydra cluster</Description>
+        <Name>Install Docker Swarm</Name>
+        <Description>Installs Docker Swarm Cluster</Description>
     </Metadata>
     <Parameters>
         <Parameter Name="Number of Minions" Type="Numeric" Variable="CLAB.Hydra.MINION_COUNT"
@@ -22,7 +22,7 @@
     </Parameters>
     <Execution>
         <Mode>Ssh</Mode>
-        <Command>blueprint.sh create --CLC "${T3.Identity.User}" "${CLAB.Hydra.PASSWORD}" "${T3.BuildServerTask.GroupID}" "${CLAB.Hydra.NetworkID}" "${T3.Server.IPAddress}" "${CLAB.Hydra.MINION_COUNT}" </Command>
+        <Command>admin.sh create --CLC "${T3.Identity.User}" "${CLAB.Hydra.PASSWORD}" "${T3.BuildServerTask.GroupID}" "${CLAB.Hydra.NetworkID}" "${T3.Server.IPAddress}" "${CLAB.Hydra.MINION_COUNT}" </Command>
         <Persistent>true</Persistent>
         <RebootOnSuccess>false</RebootOnSuccess>
     </Execution>

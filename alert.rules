@@ -21,13 +21,13 @@ ALERT hydra_up_down
 
 # Alert if containers memory usage is high
 ALERT container_high_memory_usage
-  IF container_memory_usage_bytes{job="hydra",name=~"^app"} > 5000000
+  IF container_memory_usage_bytes{job="hydra",name=~"^app"} > 50000000
   FOR 10s
   WITH {
     job="hydra"
   }
   SUMMARY "Service {{$labels.name}} has high memory usage"
-  DESCRIPTION "{{$labels.instance}} of service {{$labels.name}} has memory usage > 5M for more than 1 minute."
+  DESCRIPTION "{{$labels.instance}} of service {{$labels.name}} has memory usage > 50M for more than 1 minute."
 # Alert if containers has high http_request loads
 ALERT container_high_http_load
   IF rate(haproxy_server_connections_total[1m]) > 30

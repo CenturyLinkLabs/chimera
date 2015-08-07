@@ -2,9 +2,11 @@
 
 set -x
 
+echo $@ | logger
+
 mkdir -p ~/hydra
 cp -raf * ~/hydra/
-cd ~/hydra 
-./admin.sh $@ >/dev/null 2>&1 &
 
-exit 0;
+cmd="cd ~/hydra && ./admin.sh $@ | logger 2>&1 &"
+echo $cmd | logger
+eval $cmd
