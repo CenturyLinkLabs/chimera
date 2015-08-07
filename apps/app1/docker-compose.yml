@@ -4,6 +4,7 @@ HAPROXY:
     - 8010:8080
   environment:
     - DOCKER_HOST
+    - constraint:node==swmstr
   volumes:
     - /etc/docker:/etc/docker
 Web:
