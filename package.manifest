@@ -22,7 +22,7 @@
     </Parameters>
     <Execution>
         <Mode>Ssh</Mode>
-        <Command>admin.sh create --CLC "${T3.Identity.User}" "${CLAB.Hydra.PASSWORD}" "${T3.BuildServerTask.GroupID}" "${CLAB.Hydra.NetworkID}" "${T3.Server.IPAddress}" "${CLAB.Hydra.MINION_COUNT}" </Command>
+        <Command>blueprint.sh create --CLC "${T3.Identity.User}" "${CLAB.Hydra.PASSWORD}" "${T3.BuildServerTask.GroupID}" "${CLAB.Hydra.NetworkID}" "${T3.Server.IPAddress}" "${CLAB.Hydra.MINION_COUNT}" </Command>
         <Persistent>true</Persistent>
         <RebootOnSuccess>false</RebootOnSuccess>
     </Execution>
