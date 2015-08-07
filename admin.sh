@@ -37,9 +37,9 @@ function install_prom_agent() {
     tmp_ip=$(docker-machine ip $id)
     cur=$(grep targets.*: prometheus.yml)
     if [[ "$nt" != "m" ]]; then
-        new=$(echo $cur | sed s/]/", \'$tmp_ip:9100\', \'$tmp_ip:9104\']"/g)
+        new=$(echo $cur | sed s/]/", \'$tmp_ip:9104\']"/g)
     else
-        new=$(echo $cur | sed s/]/", \'$tmp_ip:9100\', \'$tmp_ip:9104\', \'$tmp_ip:9101\' ]"/g)
+        new=$(echo $cur | sed s/]/", \'$tmp_ip:9104\', \'$tmp_ip:9101\' ]"/g)
     fi
     sed -i s/"-.*targets:.*]"/"$new"/g prometheus.yml
     sed -i s/"targets:.*\[,"/"targets: ["/g prometheus.yml

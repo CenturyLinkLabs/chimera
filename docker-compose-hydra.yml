@@ -4,7 +4,7 @@ promserver:
     - "$PWD/prometheus.yml:/etc/prometheus/prometheus.yml"
     - "$PWD/alert.rules:/etc/prometheus/alert.rules"
   ports:
-    - "8080:9090"
+    - "80:9090"
   command: "-config.file=/etc/prometheus/prometheus.yml -alertmanager.url=http://ADMIN_HOST_IP_ADDRESS:9093"
   restart: always
 

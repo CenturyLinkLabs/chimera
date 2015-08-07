@@ -11,4 +11,4 @@ Web:
   image: "centurylink/lighttpd"
   ports:
     - ":80"
-  hostname: wordpress.wordpress.mysite.com
+  hostname: "wordpress.wordpress.mysite.com:SWARM_MASTER_IP_ADDRESS"
