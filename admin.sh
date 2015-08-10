@@ -1,9 +1,11 @@
 #!/bin/bash
 
+set -e
+
 ENV=".hydra_env"
 admin_op=$1
-create_prompt="./admin.sh create [--CLC <clc username> <clc password> <clc data center group ID> <clc network id>| --DO <DO API token> ] <admin private IP> <number of minions>"
-add_prompt="./admin.sh add [--CLC <clc username> <clc password> <clc data center group ID> | --DO <DO API token> ] <number of minions>"
+create_prompt="./admin.sh create [--CLC <clc username> <clc password> <clc data center group ID> <clc network id>| --DO <DO API token> ] <admin private IP> <number of nodes>"
+add_prompt="./admin.sh add [--CLC <clc username> <clc password> <clc data center group ID> | --DO <DO API token> ] <number of nodes>"
 
 function set_ev {
     local evn=$1
@@ -114,7 +116,7 @@ function deploy_cluster() {
     #Create Master
     deploy_swarm_node $sw_master " --swarm-master "
 
-    #Create Swarm Minions
+    #Create Swarm nodes
     for i in $(seq 1 $node_count); do
         deploy_swarm_node "$SWARM_PREFIX-$i" ""
     done
