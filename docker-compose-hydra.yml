@@ -4,7 +4,7 @@ promserver:
     - "$PWD/prometheus.yml:/etc/prometheus/prometheus.yml"
     - "$PWD/alert.rules:/etc/prometheus/alert.rules"
   ports:
-    - "80:9090"
+    - "8080:9090"
   command: "-config.file=/etc/prometheus/prometheus.yml -alertmanager.url=http://ADMIN_HOST_IP_ADDRESS:9093"
   restart: always
 
@@ -16,3 +16,33 @@ promalertmgr:
   volumes:
     - "$PWD/alertmanager.conf:/alertmanager.conf"
   restart: always
+
+promdashdb:
+  image: centurylink/mysql:latest
+  ports:
+   - "3306:3306"
+  environment:
+   - "MYSQL_ROOT_PASSWORD=password01"
+   - "MYSQL_DATABASE=promdb"
+  restart: always
+
+promdashdbrake:
+  image: prom/promdash
+  links:
+   - "promdashdb:MYSQLDB"
+  volumes:
+   - "$PWD:/tmp/prom"
+  environment:
+   - "DATABASE_URL=mysql2://root:password01@ADMIN_HOST_IP_ADDRESS/promdb"
+  command: "./bin/rake db:migrate"
+
+promdash:
+  image: prom/promdash
+  links:
+   - "promdashdb:MYSQLDB"
+  ports:
+   - "80:3000"
+  volumes:
+   - "$PWD:/tmp/prom"
+  environment:
+   - "DATABASE_URL=mysql2://root:password01@ADMIN_HOST_IP_ADDRESS/promdb"
