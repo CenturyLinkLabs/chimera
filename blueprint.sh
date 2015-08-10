@@ -9,4 +9,4 @@ cp -raf * ~/hydra/
 
 cmd="cd ~/hydra && ./admin.sh $@ | logger 2>&1 &"
 echo $cmd | logger
-eval $cmd
+eval "$cmd" &>/dev/null &disown;

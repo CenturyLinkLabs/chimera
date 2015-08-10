@@ -4,7 +4,7 @@ set -e
 
 ENV=".hydra_env"
 admin_op=$1
-create_prompt="./admin.sh create [--CLC <clc username> <clc password> <clc data center group ID> <clc network id>| --DO <DO API token> ] <admin private IP> <number of nodes>"
+create_prompt="./admin.sh create [--CLC <clc username> <clc password> <clc data center group ID> <clc network id>| --DO <DO API token> ] <admin private IP> <number of nodes> <node cpu cores> <node ram size>"
 add_prompt="./admin.sh add [--CLC <clc username> <clc password> <clc data center group ID> | --DO <DO API token> ] <number of nodes>"
 
 function set_ev {
@@ -64,7 +64,9 @@ function deploy_swarm_node() {
                 --centurylinkcloud-source-server-id=UBUNTU-14-64-TEMPLATE \
                 --centurylinkcloud-password='$clc_pwd' \
                 --centurylinkcloud-username='$clc_uname' \
-                --centurylinkcloud-network-id=$clc_nid "
+                --centurylinkcloud-network-id=$clc_nid \
+                --centurylinkcloud-cpu=$node_cpu \
+                --centurylinkcloud-memory-gb=$node_ram "
     fi
 
 
@@ -153,7 +155,7 @@ if [[ "$admin_op" == "create" ]]; then
         node_count=$5
 
         deploy_cluster
-    elif [[ "$#" == "8" ]]; then
+    elif [[ "$#" == "10" ]]; then
         dm_host="clc"
         clc_uname="$3"
         clc_pwd="$4"
@@ -161,6 +163,8 @@ if [[ "$admin_op" == "create" ]]; then
         clc_nid=$6
         admin_host_ip=$7
         node_count=$8
+        node_cpu=$9
+        node_ram=${10}
 
         deploy_cluster
     else
