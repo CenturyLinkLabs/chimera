@@ -11,7 +11,7 @@
         <Parameter Prompt="Global" Name="Node CPU Cores" Type="Numeric" Variable="CLAB.Chimera.NODE_CPU" Default="2"
             Hint="Number of CPU cores for each node including master." />
         <Parameter Prompt="Global" Name="Node Memory GB" Type="Numeric" Variable="CLAB.Chimera.NODE_MEMORY" Default="4"
-            Hint="RAM in GB for each node including master" />
+            Hint="RAM in GB for each node including master." />
         <Parameter Prompt="Global" Name="Control Panel Password" Type="Password" Variable="CLAB.Chimera.PASSWORD"
             Hint="User Password to control panel for provisioning additional nodes." />
         <Parameter Prompt="Global" Name="Network ID" Type="String" Variable="CLAB.Chimera.NetworkID"
