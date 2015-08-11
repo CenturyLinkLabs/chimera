@@ -2,27 +2,28 @@
 <Manifest>
     <Metadata>
         <UUID>7F28A4BA-89C0-46AD-9071-62489595384C</UUID>
-        <Name>Install Docker Swarm</Name>
-        <Description>Installs Docker Swarm Cluster</Description>
+        <Name>Install Docker Swarm with Monitoring</Name>
+        <Description>Installs Docker Swarm Cluster. Help Docs: http://j.mp/pmx_install </Description>
     </Metadata>
     <Parameters>
-        <Parameter Name="Number of Nodes" Type="Numeric" Variable="CLAB.Hydra.NODE_COUNT"
-            Hint="Specify the number of nodes you want on the cluster, The cluster will have a Hydra admin, Swarm Master and the selected number of nodes."
-             />
-        <Parameter Name="Control Password" Type="Password" Variable="CLAB.Hydra.PASSWORD"
-            Hint="User Password to control panel for provisioning additional servers."
-            />
-        <Parameter Name="Network ID" Type="String" Variable="CLAB.Hydra.NetworkID"
-                    Hint="Enter the NetworkID for the network selected when creating server."
-                    />
-        <Parameter Name="Control Username" Type="String" Variable="T3.Identity.User" Prompt="false"/>
-        <Parameter Name="Control Username" Type="String" Variable="T3.BuildServerTask.GroupID" Prompt="false"/>
-        <Parameter Name="Control Username" Type="String" Variable="T3.BuildServerTask.Network" Prompt="false"/>
-        <Parameter Name="Control Username" Type="String" Variable="T3.Server.IPAddress" Prompt="false"/>
+        <Parameter Prompt="Global" Name="Number of Swarm Nodes" Type="Numeric" Variable="CLAB.Chimera.NODE_COUNT"
+            Hint="Number of nodes in addition to Swarm Master." Default="2" />
+        <Parameter Prompt="Global" Name="Node CPU Cores" Type="Numeric" Variable="CLAB.Chimera.NODE_CPU" Default="2"
+            Hint="Number of CPU cores for each node including master." />
+        <Parameter Prompt="Global" Name="Node Memory GB" Type="Numeric" Variable="CLAB.Chimera.NODE_MEMORY" Default="4"
+            Hint="RAM in GB for each node including master." />
+        <Parameter Prompt="Global" Name="Control Panel Password" Type="Password" Variable="CLAB.Chimera.PASSWORD"
+            Hint="User Password to control panel for provisioning additional nodes." />
+        <Parameter Prompt="Global" Name="Network ID" Type="String" Variable="CLAB.Chimera.NetworkID"
+            Hint="Enter the NetworkID for the network selected when creating server." />
+        <Parameter  Name="Control Username" Type="String" Variable="T3.Identity.User" Prompt="false"/>
+        <Parameter  Name="Control GroupID" Type="String" Variable="T3.BuildServerTask.GroupID" Prompt="false"/>
+        <Parameter  Name="Control Network Name" Type="String" Variable="T3.BuildServerTask.Network" Prompt="false"/>
+        <Parameter  Name="Server IP Address" Type="String" Variable="T3.Server.IPAddress" Prompt="false"/>
     </Parameters>
     <Execution>
         <Mode>Ssh</Mode>
-        <Command>admin.sh create --CLC "${T3.Identity.User}" "${CLAB.Hydra.PASSWORD}" "${T3.BuildServerTask.GroupID}" "${CLAB.Hydra.NetworkID}" "${T3.Server.IPAddress}" "${CLAB.Hydra.NODE_COUNT}" </Command>
+        <Command>blueprint.sh create --CLC "${T3.Identity.User}" "${CLAB.Chimera.PASSWORD}" "${T3.BuildServerTask.GroupID}" "${CLAB.Chimera.NetworkID}" "${T3.Server.IPAddress}" "${CLAB.Chimera.NODE_COUNT}" "${CLAB.Chimera.NODE_CPU}" "${CLAB.Chimera.NODE_MEMORY}" </Command>
         <Persistent>true</Persistent>
         <RebootOnSuccess>false</RebootOnSuccess>
     </Execution>
