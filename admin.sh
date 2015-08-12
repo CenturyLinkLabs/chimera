@@ -1,7 +1,5 @@
 #!/bin/bash
 
-set -e
-
 ENV=".hydra_env"
 admin_op=$1
 create_prompt="./admin.sh create [--CLC <clc username> <clc password> <clc data center group ID> <clc network id>| --DO <DO API token> ] <admin private IP> <number of nodes> <node cpu cores> <node ram size>"
@@ -72,8 +70,10 @@ function deploy_swarm_node() {
 
     cmd="docker-machine --debug  \
              create $clp   \
-            --swarm  $af \
-            --swarm-discovery token://$SWARM_TOKEN  $id"
+             --engine-install-url \"https://get.docker.com/ubuntu/ | sed -r 's/^apt-get install -y lxc-docker$/apt-get install -y lxc-docker-1.7.1/g' \" \
+             --swarm-image swarm:0.3.0 \
+             --swarm  $af \
+             --swarm-discovery token://$SWARM_TOKEN  $id"
 
     eval $cmd
 
@@ -91,7 +91,8 @@ function deploy_cluster() {
     apt-get -y -q install wget unzip curl
 
     #Install Docker
-    wget -qO- https://get.docker.com/ | sh
+    #curl -sSL https://get.docker.com | sh
+    curl -sSL "https://get.docker.com/ubuntu/ | sed -r 's/^apt-get install -y lxc-docker$/apt-get install -y lxc-docker-1.7.1/g' " | sh
 
     #Install Docker-Machine
     #curl -L https://github.com/docker/machine/releases/download/v0.3.0/docker-machine_linux-amd64 > /usr/local/bin/docker-machine
@@ -107,8 +108,10 @@ function deploy_cluster() {
     cleanup_old_install
 
     #Create Swarm Token
-    SWARM_TOKEN=$(docker run swarm create)
-    set_ev "SWARM_TOKEN" "$SWARM_TOKEN"
+    #SWARM_TOKEN=$(sudo docker run swarm:0.3.0 create)
+    #echo SWARM TOKEN $SWARM_TOKEN
+    #set_ev "SWARM_TOKEN" "$SWARM_TOKEN"
+
 
     SWARM_PREFIX="$(cat /dev/urandom | tr -dc 'a-z' | fold -w 4 | head -n 1)"
     set_ev "SWARM_PREFIX" "$SWARM_PREFIX"
