@@ -23,24 +23,17 @@ function cleanup_old_install() {
 }
 
 function install_prom_agent() {
-    eval "$(docker-machine env $1)"
-    nt="$2"
-
-    docker run -d --name PROM_CON_EXP \
+    cmd = "docker run -d --name PROM_CON_EXP \
         --restart=always \
         -p 9104:9104 \
         -v /sys/fs/cgroup:/cgroup \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        prom/container-exporter
+        prom/container-exporter "
+    docker-machine ssh $1 "$cmd"
 
-    eval "$(docker-machine env -u)"
     tmp_ip=$(docker-machine ip $id)
     cur=$(grep targets.*: prometheus.yml)
-    if [[ "$nt" != "m" ]]; then
-        new=$(echo $cur | sed s/]/", \'$tmp_ip:9104\']"/g)
-    else
-        new=$(echo $cur | sed s/]/", \'$tmp_ip:9104\', \'$tmp_ip:9101\' ]"/g)
-    fi
+    new=$(echo $cur | sed s/]/", \'$tmp_ip:9104\']"/g)
     sed -i s/"-.*targets:.*]"/"$new"/g prometheus.yml
     sed -i s/"targets:.*\[,"/"targets: ["/g prometheus.yml
 }
@@ -77,7 +70,7 @@ function deploy_swarm_node() {
 
     eval $cmd
 
-    install_prom_agent $id $nt
+    install_prom_agent $id
 }
 
 function deploy_cluster() {
