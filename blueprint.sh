@@ -5,26 +5,17 @@ set -x
 mkdir -p ~/hydra
 cp -raf * ~/hydra/
 
-ENV="~/hydra/.hydra_env"
-
-echo "$@" | logger
-
-apt-get -y install curl
-curl -sSL https://get.docker.com/ubuntu/ | sed -r 's/^apt-get install -y lxc-docker$/apt-get install -y lxc-docker-1.7.1/g'  | sh
-
-function set_ev {
-    local evn=$1
-    sed  -i "/$evn=/d" "$ENV"
-    echo "export $1=$2" >> "$ENV"
-    export $1=$2
-}
-
+#Install Docker
+add-apt-repository -y "deb https://get.docker.com/ubuntu docker main"
+apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 36A1D7869245C8950F966E92D8576A8BA88D21E9
+apt-get update -y -qq
+apt-get install -y lxc-docker-1.7.1 curl
 
 #Create Swarm Token
-SWARM_TOKEN=$(sudo docker run swarm:0.3.0 create)
-echo SWARM TOKEN $SWARM_TOKEN | logger
-set_ev "SWARM_TOKEN" "$SWARM_TOKEN"
+docker run swarm:0.3.0 create > /tmp/swarm_token
 
+
+echo "$@" | logger
 
 cmd="./admin.sh `echo $@`"
 cd ~/hydra && nohup sh -c "eval $cmd | logger &"

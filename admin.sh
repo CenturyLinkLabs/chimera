@@ -23,7 +23,7 @@ function cleanup_old_install() {
 }
 
 function install_prom_agent() {
-    cmd = "docker run -d --name PROM_CON_EXP \
+    cmd="docker run -d --name PROM_CON_EXP \
         --restart=always \
         -p 9104:9104 \
         -v /sys/fs/cgroup:/cgroup \
@@ -69,6 +69,10 @@ function deploy_swarm_node() {
              --swarm-discovery token://$SWARM_TOKEN  $id"
 
     eval $cmd
+    if [[ "$?" != "0" ]]; then 
+        echo -e "\n Problem with docker machine install.... Aborting"
+        exit -1;
+    fi
 
     install_prom_agent $id
 }
@@ -81,11 +85,11 @@ function deploy_cluster() {
     set_ev "HYDRA_PORT" "8888"
     set_ev "PROVIDER" "$dm_host"
 
-    apt-get -y -q install wget unzip curl
-
     #Install Docker
-    #curl -sSL https://get.docker.com | sh
-    curl -sSL "https://get.docker.com/ubuntu/ | sed -r 's/^apt-get install -y lxc-docker$/apt-get install -y lxc-docker-1.7.1/g' " | sh
+    add-apt-repository -y "deb https://get.docker.com/ubuntu docker main"
+    apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 36A1D7869245C8950F966E92D8576A8BA88D21E9
+    apt-get update -y -qq
+    apt-get install -y lxc-docker-1.7.1 curl
 
     #Install Docker-Machine
     #curl -L https://github.com/docker/machine/releases/download/v0.3.0/docker-machine_linux-amd64 > /usr/local/bin/docker-machine
@@ -101,9 +105,11 @@ function deploy_cluster() {
     cleanup_old_install
 
     #Create Swarm Token
-    #SWARM_TOKEN=$(sudo docker run swarm:0.3.0 create)
-    #echo SWARM TOKEN $SWARM_TOKEN
-    #set_ev "SWARM_TOKEN" "$SWARM_TOKEN"
+    docker run swarm:0.3.0 create > /tmp/swarm_token
+    SWARM_TOKEN=$(</tmp/swarm_token)
+    #SWARM_TOKEN=$(docker run swarm:0.3.0 create)
+    echo SWARM TOKEN $SWARM_TOKEN
+    set_ev "SWARM_TOKEN" "$SWARM_TOKEN"
 
 
     SWARM_PREFIX="$(cat /dev/urandom | tr -dc 'a-z' | fold -w 4 | head -n 1)"
