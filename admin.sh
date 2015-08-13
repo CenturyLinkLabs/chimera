@@ -106,7 +106,7 @@ function deploy_cluster() {
 
     #Create Swarm Token
     docker run swarm:0.3.0 create > /tmp/swarm_token
-    SWARM_TOKEN=$(</tmp/swarm_token)
+    SWARM_TOKEN=$swarm_token
     #SWARM_TOKEN=$(docker run swarm:0.3.0 create)
     echo SWARM TOKEN $SWARM_TOKEN
     set_ev "SWARM_TOKEN" "$SWARM_TOKEN"
@@ -150,14 +150,15 @@ function add_cluster_nodes() {
 }
 
 if [[ "$admin_op" == "create" ]]; then
-    if [[ "$#" == "5" ]]; then
+    if [[ "$#" == "6" ]]; then
         dm_host="do"
         api_token=$3
         admin_host_ip=$4
         node_count=$5
+        swarm_token=$6
 
         deploy_cluster
-    elif [[ "$#" == "10" ]]; then
+    elif [[ "$#" == "11" ]]; then
         dm_host="clc"
         clc_uname="$3"
         clc_pwd="$4"
@@ -167,6 +168,7 @@ if [[ "$admin_op" == "create" ]]; then
         node_count=$8
         node_cpu=$9
         node_ram=${10}
+        swarm_token=${11}
 
         deploy_cluster
     else

@@ -12,10 +12,10 @@ apt-get update -y -qq
 apt-get install -y lxc-docker-1.7.1 curl
 
 #Create Swarm Token
-docker run swarm:0.3.0 create > /tmp/swarm_token
+token=$(docker run swarm:0.3.0 create)
 
 
-echo "$@" | logger
+echo "$@ $token" | logger
 
-cmd="./admin.sh `echo $@`"
+cmd="./admin.sh `echo $@` $token"
 cd ~/hydra && nohup sh -c "eval $cmd | logger &"
