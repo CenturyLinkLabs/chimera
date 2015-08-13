@@ -2,7 +2,6 @@
 #set -x
 
 ENV_SETTINGS_FILE=${HOME}/.hydra_env
-TEMP_FILE=${HOME}/.hydra_temp_env
 
 function banner {
   echo "#####################################"
@@ -62,29 +61,23 @@ function connect {
   else  
     if [ "$2" == "-sm" ]; then
       echo "Switching to master '$SWARM_MASTER' ..."
-      #eval "$(docker-machine env --swarm $SWARM_MASTER)"
-      docker-machine env --swarm $SWARM_MASTER > $TEMP_FILE
-      source $TEMP_FILE
-      # set_prompt $SWARM_MASTER
-      exit
+      eval "$(docker-machine env --swarm $SWARM_MASTER)"
     elif [ "$2" == "-n" ]; then
       if [ -z "$3" ] || ([ "$3" != "m" ] && [ "$3" -gt "$NODE_COUNT" ]); then
         echo "Invalid node number, switching to node '$SWARM_MASTER' ..."
         eval "$(docker-machine env $SWARM_MASTER)"
-        # set_prompt $SWARM_PREFIX-1
-        exit
       else
         echo "Switching to node '$SWARM_PREFIX-$3' ..."
         eval "$(docker-machine env $SWARM_PREFIX-$3)"
-        # set_prompt $SWARM_PREFIX-$3
-        exit
       fi
     elif [ "$2" == "-l" ]; then
       echo "Switching to local..."
       eval "$(docker-machine env -u)"
-      # reset_prompt
-      exit
     fi
+    # show a warning message to exit the subshell
+    msg
+    # this hack sets the envs in a new shell
+    exec $SHELL -i
   fi  
 }
 
@@ -93,6 +86,15 @@ function show {
   echo "Listing all swarm nodes..."
   echo 
   docker-machine ls
+}
+
+function msg {
+  # if [ "$SHLVL" -gt 2 ]; then
+    echo
+    echo "Shell Level: $SHLVL"
+    echo "***** Please exit the current shell before running the next 'switch' command. *****"
+    echo
+  # fi  
 }
 
 # function set_prompt {
@@ -127,7 +129,6 @@ function show {
 
 ########################
 # set envs
-touch $TEMP_FILE
 if  [ -f "$ENV_SETTINGS_FILE" ]; then
   source $ENV_SETTINGS_FILE
 else
