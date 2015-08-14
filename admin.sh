@@ -1,7 +1,5 @@
 #!/bin/bash
 
-set -e
-
 ENV=".hydra_env"
 admin_op=$1
 create_prompt="./admin.sh create [--CLC <clc username> <clc password> <clc data center group ID> <clc network id>| --DO <DO API token> ] <admin private IP> <number of nodes> <node cpu cores> <node ram size>"
@@ -16,7 +14,7 @@ function set_ev {
 
 function cleanup_old_install() {
     if [[ "$(docker ps -aq)" != "" ]]; then
-        docker rm -f `docker ps -aq`
+        docker rm -f `docker ps -aq -f=name=hydra`
     fi
     if [[ "$(docker-machine ls -q)" != "" ]]; then
         docker-machine rm -f `docker-machine ls -q`
@@ -25,24 +23,17 @@ function cleanup_old_install() {
 }
 
 function install_prom_agent() {
-    eval "$(docker-machine env $1)"
-    nt="$2"
-
-    docker run -d --name PROM_CON_EXP \
+    cmd="docker run -d --name PROM_CON_EXP \
         --restart=always \
         -p 9104:9104 \
         -v /sys/fs/cgroup:/cgroup \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        prom/container-exporter
+        prom/container-exporter "
+    docker-machine ssh $1 "$cmd"
 
-    eval "$(docker-machine env -u)"
     tmp_ip=$(docker-machine ip $id)
     cur=$(grep targets.*: prometheus.yml)
-    if [[ "$nt" != "m" ]]; then
-        new=$(echo $cur | sed s/]/", \'$tmp_ip:9104\']"/g)
-    else
-        new=$(echo $cur | sed s/]/", \'$tmp_ip:9104\', \'$tmp_ip:9101\' ]"/g)
-    fi
+    new=$(echo $cur | sed s/]/", \'$tmp_ip:9104\']"/g)
     sed -i s/"-.*targets:.*]"/"$new"/g prometheus.yml
     sed -i s/"targets:.*\[,"/"targets: ["/g prometheus.yml
 }
@@ -72,12 +63,18 @@ function deploy_swarm_node() {
 
     cmd="docker-machine --debug  \
              create $clp   \
-            --swarm  $af \
-            --swarm-discovery token://$SWARM_TOKEN  $id"
+             --engine-install-url \"https://get.docker.com/ubuntu/ | sed -r 's/^apt-get install -y lxc-docker$/apt-get install -y lxc-docker-1.7.1/g' \" \
+             --swarm-image swarm:0.3.0 \
+             --swarm  $af \
+             --swarm-discovery token://$SWARM_TOKEN  $id"
 
     eval $cmd
+    if [[ "$?" != "0" ]]; then 
+        echo -e "\n Problem with docker machine install.... Aborting"
+        exit -1;
+    fi
 
-    install_prom_agent $id $nt
+    install_prom_agent $id
 }
 
 function deploy_cluster() {
@@ -88,10 +85,11 @@ function deploy_cluster() {
     set_ev "HYDRA_PORT" "8888"
     set_ev "PROVIDER" "$dm_host"
 
-    apt-get -y -q install wget unzip curl
-
     #Install Docker
-    wget -qO- https://get.docker.com/ | sh
+    add-apt-repository -y "deb https://get.docker.com/ubuntu docker main"
+    apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 36A1D7869245C8950F966E92D8576A8BA88D21E9
+    apt-get update -y -qq
+    apt-get install -y lxc-docker-1.7.1 curl
 
     #Install Docker-Machine
     #curl -L https://github.com/docker/machine/releases/download/v0.3.0/docker-machine_linux-amd64 > /usr/local/bin/docker-machine
@@ -107,8 +105,12 @@ function deploy_cluster() {
     cleanup_old_install
 
     #Create Swarm Token
-    SWARM_TOKEN=$(docker run swarm create)
+    docker run swarm:0.3.0 create > /tmp/swarm_token
+    SWARM_TOKEN=$swarm_token
+    #SWARM_TOKEN=$(docker run swarm:0.3.0 create)
+    echo SWARM TOKEN $SWARM_TOKEN
     set_ev "SWARM_TOKEN" "$SWARM_TOKEN"
+
 
     SWARM_PREFIX="$(cat /dev/urandom | tr -dc 'a-z' | fold -w 4 | head -n 1)"
     set_ev "SWARM_PREFIX" "$SWARM_PREFIX"
@@ -126,6 +128,11 @@ function deploy_cluster() {
     #Switch back to admin machine
     eval "$(docker-machine env -u)"
 
+    #Running a temp log server to show progress during deployment.
+    log_server_id=$(</tmp/log_server_id)
+    if [[ "$log_server_id" != "" ]]; then 
+        sudo docker rm -f $log_server_id
+    fi
     #Run Containers needed for cluster management
     sed -i s/ADMIN_HOST_IP_ADDRESS/$admin_host_ip/g docker-compose-hydra.yml
     sed -i s/ADMIN_HOST_IP_ADDRESS/$admin_host_ip/g alertmanager.conf
@@ -148,14 +155,15 @@ function add_cluster_nodes() {
 }
 
 if [[ "$admin_op" == "create" ]]; then
-    if [[ "$#" == "5" ]]; then
+    if [[ "$#" == "6" ]]; then
         dm_host="do"
         api_token=$3
         admin_host_ip=$4
         node_count=$5
+        swarm_token=$6
 
         deploy_cluster
-    elif [[ "$#" == "10" ]]; then
+    elif [[ "$#" == "11" ]]; then
         dm_host="clc"
         clc_uname="$3"
         clc_pwd="$4"
@@ -165,6 +173,7 @@ if [[ "$admin_op" == "create" ]]; then
         node_count=$8
         node_cpu=$9
         node_ram=${10}
+        swarm_token=${11}
 
         deploy_cluster
     else
