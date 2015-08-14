@@ -1,0 +1,14 @@
+HAPROXY:
+  image: bfirsh/interlock-haproxy-swarm
+  ports:
+    - 8010:8080
+  environment:
+    - DOCKER_HOST
+    - constraint:node==swmstr
+  volumes:
+    - /etc/docker:/etc/docker
+Web:
+  image: "centurylink/lighttpd"
+  ports:
+    - ":80"
+  hostname: wordpress.wordpress.mysite.com
