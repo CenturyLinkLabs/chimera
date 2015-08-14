@@ -14,7 +14,7 @@ function set_ev {
 
 function cleanup_old_install() {
     if [[ "$(docker ps -aq)" != "" ]]; then
-        docker rm -f `docker ps -aq`
+        docker rm -f `docker ps -aq -f=name=hydra`
     fi
     if [[ "$(docker-machine ls -q)" != "" ]]; then
         docker-machine rm -f `docker-machine ls -q`
@@ -128,6 +128,11 @@ function deploy_cluster() {
     #Switch back to admin machine
     eval "$(docker-machine env -u)"
 
+    #Running a temp log server to show progress during deployment.
+    log_server_id=$(</tmp/log_server_id)
+    if [[ "$log_server_id" != "" ]]; then 
+        sudo docker rm -f $log_server_id
+    fi
     #Run Containers needed for cluster management
     sed -i s/ADMIN_HOST_IP_ADDRESS/$admin_host_ip/g docker-compose-hydra.yml
     sed -i s/ADMIN_HOST_IP_ADDRESS/$admin_host_ip/g alertmanager.conf
