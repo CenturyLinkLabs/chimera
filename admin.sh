@@ -1,6 +1,6 @@
 #!/bin/bash
 
-ENV=".hydra_env"
+ENV="${HOME}/.hydra_env"
 admin_op=$1
 create_prompt="./admin.sh create [--CLC <clc username> <clc password> <clc data center group ID> <clc network id>| --DO <DO API token> ] <admin private IP> <number of nodes> <node cpu cores> <node ram size>"
 add_prompt="./admin.sh add [--CLC <clc username> <clc password> <clc data center group ID> | --DO <DO API token> ] <number of nodes>"
@@ -19,7 +19,6 @@ function cleanup_old_install() {
     if [[ "$(docker-machine ls -q)" != "" ]]; then
         docker-machine rm -f `docker-machine ls -q`
     fi
-    pkill hydrago
 }
 
 function install_prom_agent() {
@@ -138,9 +137,11 @@ function deploy_cluster() {
     sed -i s/ADMIN_HOST_IP_ADDRESS/$admin_host_ip/g alertmanager.conf
     docker-compose -f docker-compose-hydra.yml up -d
 
-    #Start Hydra
-    set_ev "LOG_LEVEL" "DEBUG"
-    source $ENV && cd bin && ./hydrago >/dev/null 2>&1 &
+    #Add hydra aliases for easier docker-machine usage.
+    cp cdm.sh /usr/local/bin/cdm
+
+    echo "Docker Swarm cluster deployment complete."
+    echo "Alias for docker-machine named 'cdm' has been added. Run 'cdm help' for usage info."
 }
 
 function add_cluster_nodes() {
