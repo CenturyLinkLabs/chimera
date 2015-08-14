@@ -1,7 +1,7 @@
 #! /bin/bash
 
-mkdir -p ~/hydra
-cp -raf * ~/hydra/
+mkdir -p ~/chimera
+cp -raf * ~/chimera/
 
 #Install Docker
 add-apt-repository -y "deb https://get.docker.com/ubuntu docker main"
@@ -17,4 +17,4 @@ docker run -d --name log_server -v /var/log/syslog:/log -p 80:80 centurylink/lig
 echo "log_server" > /tmp/log_server_id
 
 cmd="./admin.sh `echo $@` $token"
-cd ~/hydra && nohup sh -c "eval $cmd | logger &"
+cd ~/chimera && nohup sh -c "eval $cmd | logger &"

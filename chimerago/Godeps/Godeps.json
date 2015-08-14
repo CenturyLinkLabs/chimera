@@ -1,5 +1,5 @@
 {
-	"ImportPath": "github.com/CenturyLinkLabs/hydra/hydrago",
+	"ImportPath": "github.com/CenturyLinkLabs/chimera/chimerago",
 	"GoVersion": "go1.3.2",
 	"Deps": [
 		{

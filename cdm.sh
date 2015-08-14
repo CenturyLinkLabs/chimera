@@ -1,7 +1,7 @@
 #!/bin/bash
 #set -x
 
-ENV_SETTINGS_FILE=${HOME}/.hydra_env
+ENV_SETTINGS_FILE=${HOME}/.chimera_env
 
 function banner {
   echo "#####################################"

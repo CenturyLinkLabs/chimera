@@ -2,7 +2,7 @@ package api
 
 import (
 	"net/http"
-	"github.com/CenturyLinkLabs/hydra/hydrago/alert"
+	"github.com/CenturyLinkLabs/chimera/chimerago/alert"
 )
 
 type route struct {
