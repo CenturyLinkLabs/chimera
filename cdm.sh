@@ -23,13 +23,14 @@ function help {
     version
     echo "---------------------------------------------------------------------"
     echo "Help:"
-    echo "   help, -h    - print this help text"
+    echo "   help,    -h - print this help text"
     echo "   version, -v - print the version"
-    echo "   switch      - switch nodes"
+    echo "   list,    ls - list all the swarm nodes"
+    echo "   connect, co - switch swarm nodes"
+    echo "     options:"
     echo "            -l - to local docker daemon, "
     echo "           -sm - to swarm master, " 
     echo "            -n - to node 'm' or <number>"
-    echo "   show        - list all the nodes"
     echo "---------------------------------------------------------------------"
 }
 
@@ -41,11 +42,11 @@ function ctl_dm_helper {
   elif [ "$1" == "version" ] || [ "$1" == "-v" ]; then
     version
     exit
-  elif [ "$1" == "switch" ]; then
+  elif [ "$1" == "connect" ] || [ "$1" == "co" ]; then
     connect $1 $2 $3
     exit
-  elif [ "$1" == "show" ]; then
-    show
+  elif [ "$1" == "list" ] || [ "$1" == "ls" ]; then
+    list
     exit
   else
     echo "Invalid command. Use 'cdm help' for usage."
@@ -63,7 +64,10 @@ function connect {
       echo "Switching to master '$SWARM_MASTER' ..."
       eval "$(docker-machine env --swarm $SWARM_MASTER)"
     elif [ "$2" == "-n" ]; then
-      if [ -z "$3" ] || ([ "$3" != "m" ] && [ "$3" -gt "$NODE_COUNT" ]); then
+      if [ "$3" == "m" ]; then
+        echo "Switching to node '$SWARM_MASTER' ..."
+        eval "$(docker-machine env $SWARM_MASTER)"
+      elif [ -z "$3" ] || ([ "$3" != "m" ] && ([ "$3" -gt "$NODE_COUNT" ] || [ "$3" -le 0 ])); then
         echo "Invalid node number, switching to node '$SWARM_MASTER' ..."
         eval "$(docker-machine env $SWARM_MASTER)"
       else
@@ -81,7 +85,7 @@ function connect {
   fi  
 }
 
-function show {
+function list {
   # list all swarm nodes
   echo "Listing all swarm nodes..."
   echo 
