@@ -7,8 +7,8 @@ function banner {
   echo "#####################################"
   echo "           Welcome to CDM!           "
   echo "                                     "
-  echo " A simple utility to switch Chimera  "
-  echo " swarm nodes with docker-machine     "
+  echo " A simple utility to switch between  "
+  echo " docker daemons in a swarm cluster.  "
   echo "#####################################"
   echo
 }
@@ -26,9 +26,9 @@ function help {
     echo "   help,    -h - print this help text"
     echo "   version, -v - print the version"
     echo "   list,    ls - list all the swarm nodes"
-    echo "   connect, co - switch swarm nodes"
+    echo "   connect, co - switch to swarm node docker daemon"
     echo "     options:"
-    echo "            -l - to local docker daemon, "
+    echo "            -l - to local, "
     echo "           -sm - to swarm master, " 
     echo "            -n - to node 'm' or <number>"
     echo "---------------------------------------------------------------------"
@@ -61,14 +61,14 @@ function connect {
     exit
   else  
     if [ "$2" == "-sm" ]; then
-      echo "Switching to master '$SWARM_MASTER' ..."
+      echo "Switching to docker daemon on master '$SWARM_MASTER' ..."
       eval "$(docker-machine env --swarm $SWARM_MASTER)"
     elif [ "$2" == "-n" ]; then
       if [ "$3" == "m" ]; then
-        echo "Switching to node '$SWARM_MASTER' ..."
+        echo "Switching to docker daemon on node '$SWARM_MASTER' ..."
         eval "$(docker-machine env $SWARM_MASTER)"
       elif [ -z "$3" ] || ([ "$3" != "m" ] && ([ "$3" -gt "$NODE_COUNT" ] || [ "$3" -le 0 ])); then
-        echo "Invalid node number, switching to node '$SWARM_MASTER' ..."
+        echo "Invalid node number, switching to docker daemon on node '$SWARM_MASTER' ..."
         eval "$(docker-machine env $SWARM_MASTER)"
       else
         echo "Switching to node '$SWARM_PREFIX-$3' ..."
@@ -95,8 +95,8 @@ function list {
 function msg {
   # if [ "$SHLVL" -gt 2 ]; then
     echo
-    echo "Shell Level: $SHLVL"
-    echo "***** Please exit the current shell before running the next 'switch' command. *****"
+    echo "Sub-Shell Level: $SHLVL created."
+    echo "** Please exit the current Sub-Shell $SHLVL before running the next 'connect' command. **"
     echo
   # fi  
 }
