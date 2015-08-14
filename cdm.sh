@@ -26,7 +26,7 @@ function help {
     echo "   help,    -h - print this help text"
     echo "   version, -v - print the version"
     echo "   list,    ls - list all the swarm nodes"
-    echo "   connect, co - switch to swarm node"
+    echo "   connect, co - switch swarm node"
     echo "     options:"
     echo "            -l - to local, "
     echo "           -sm - to swarm master, " 
