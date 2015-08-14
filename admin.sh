@@ -1,6 +1,6 @@
 #!/bin/bash
 
-ENV="${HOME}/.hydra_env"
+ENV="${HOME}/.chimera_env"
 admin_op=$1
 create_prompt="./admin.sh create [--CLC <clc username> <clc password> <clc data center group ID> <clc network id>| --DO <DO API token> ] <admin private IP> <number of nodes> <node cpu cores> <node ram size>"
 add_prompt="./admin.sh add [--CLC <clc username> <clc password> <clc data center group ID> | --DO <DO API token> ] <number of nodes>"
@@ -14,7 +14,7 @@ function set_ev {
 
 function cleanup_old_install() {
     if [[ "$(docker ps -aq)" != "" ]]; then
-        docker rm -f `docker ps -aq -f=name=hydra`
+        docker rm -f `docker ps -aq -f=name=chimera`
     fi
     if [[ "$(docker-machine ls -q)" != "" ]]; then
         docker-machine rm -f `docker-machine ls -q`
@@ -81,7 +81,7 @@ function deploy_cluster() {
 
     set_ev "NODE_COUNT" "$node_count"
     set_ev "APP_BASE_FOLDER" "$(pwd)/apps"
-    set_ev "HYDRA_PORT" "8888"
+    set_ev "CHIMERA_PORT" "8888"
     set_ev "PROVIDER" "$dm_host"
 
     #Install Docker
@@ -133,11 +133,11 @@ function deploy_cluster() {
         sudo docker rm -f $log_server_id
     fi
     #Run Containers needed for cluster management
-    sed -i s/ADMIN_HOST_IP_ADDRESS/$admin_host_ip/g docker-compose-hydra.yml
+    sed -i s/ADMIN_HOST_IP_ADDRESS/$admin_host_ip/g docker-compose-chimera.yml
     sed -i s/ADMIN_HOST_IP_ADDRESS/$admin_host_ip/g alertmanager.conf
-    docker-compose -f docker-compose-hydra.yml up -d
+    docker-compose -f docker-compose-chimera.yml up -d
 
-    #Add hydra aliases for easier docker-machine usage.
+    #Add chimera aliases for easier docker-machine usage.
     cp cdm.sh /usr/local/bin/cdm
 
     echo "Docker Swarm cluster deployment complete."
@@ -152,7 +152,7 @@ function add_cluster_nodes() {
     for i in $(seq 1 $node_count); do
         deploy_swarm_node "$SWARM_PREFIX-$(($i+$NODE_COUNT))"
     done
-    docker-compose -f docker-compose-hydra.yml up -d
+    docker-compose -f docker-compose-chimera.yml up -d
 }
 
 if [[ "$admin_op" == "create" ]]; then

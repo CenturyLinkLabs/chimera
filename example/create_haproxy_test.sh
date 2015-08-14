@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #Get swarm master IP address
-source .hydra_env
+source .chimera_env
 
 mstr_ip=$(docker-machine ip $SWARM_MASTER) 
 sed -i s/SWARM_MASTER_IP_ADDRES/$mstr_ip/g apps/app1/docker-compose.yml

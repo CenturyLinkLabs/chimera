@@ -1,12 +1,12 @@
-package main // import "github.com/CenturyLinkLabs/hydra/hydrago"
+package main // import "github.com/CenturyLinkLabs/chimera/chimerago"
 
 import (
 	"flag"
 	"os"
 	"strings"
 
-    "github.com/CenturyLinkLabs/hydra/hydrago/alert"
-    "github.com/CenturyLinkLabs/hydra/hydrago/api"
+    "github.com/CenturyLinkLabs/chimera/chimerago/alert"
+    "github.com/CenturyLinkLabs/chimera/chimerago/api"
 	log "github.com/Sirupsen/logrus"
 )
 
@@ -31,7 +31,7 @@ func serverPort() string {
 	var portFlag string
 	flag.StringVar(&portFlag, "p", "", "port on which the server will run")
 
-	port := os.Getenv("HYDRA_PORT")
+	port := os.Getenv("CHIMERA_PORT")
 
 	if port == "" {
 		flag.Parse()

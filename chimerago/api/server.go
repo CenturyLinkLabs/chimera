@@ -1,11 +1,11 @@
-package api // import "github.com/CenturyLinkLabs/hydra/hydrago/api"
+package api // import "github.com/CenturyLinkLabs/chimera/chimerago/api"
 
 import (
 	"net/http"
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/CenturyLinkLabs/hydra/hydrago/alert"
+	"github.com/CenturyLinkLabs/chimera/chimerago/alert"
 	log "github.com/Sirupsen/logrus"
 )
 

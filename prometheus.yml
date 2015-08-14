@@ -7,7 +7,7 @@ global:
 
   # Attach these extra labels to all time-series collected by this Prometheus instance.
   labels:
-    monitor: 'hydra-monitor'
+    monitor: 'chimera-monitor'
 
 rule_files:
   - '/etc/prometheus/alert.rules'
@@ -16,8 +16,8 @@ rule_files:
 scrape_configs:
   # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
 
-  # Hydra
-  - job_name: 'hydra'
+  # chimera
+  - job_name: 'chimera'
     scrape_interval: 5s
 
     # Override the global default and scrape targets from this job every 5 seconds.

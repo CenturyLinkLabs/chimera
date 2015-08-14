@@ -1,7 +1,7 @@
 ### alert.rules ###
 
 # Alert for any instance that is unreachable for >5 minutes.
-ALERT hydra_up_down
+ALERT chimera_up_down
   IF up == 0
   FOR 10s
   WITH {

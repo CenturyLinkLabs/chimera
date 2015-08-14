@@ -4,7 +4,7 @@ import (
     "net/http"
 	"encoding/json"
 
-    "github.com/CenturyLinkLabs/hydra/hydrago/alert"
+    "github.com/CenturyLinkLabs/chimera/chimerago/alert"
     "github.com/Sirupsen/logrus")
 
 func UpDown(am alert.AlertManager, w http.ResponseWriter, r *http.Request) {

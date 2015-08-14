@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"fmt"
 
-	"github.com/CenturyLinkLabs/hydra/hydrago/alert"
+	"github.com/CenturyLinkLabs/chimera/chimerago/alert"
 	"github.com/gorilla/mux"
     log "github.com/Sirupsen/logrus"
 )
