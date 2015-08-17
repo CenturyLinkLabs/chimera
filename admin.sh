@@ -54,7 +54,7 @@ function deploy_swarm_node() {
                 --centurylinkcloud-source-server-id=UBUNTU-14-64-TEMPLATE \
                 --centurylinkcloud-password='$clc_pwd' \
                 --centurylinkcloud-username='$clc_uname' \
-                --centurylinkcloud-network-id=$clc_nid \
+                --centurylinkcloud-network-id=$CLC_NETWORKID \
                 --centurylinkcloud-cpu=$node_cpu \
                 --centurylinkcloud-memory-gb=$node_ram "
     fi
@@ -76,7 +76,40 @@ function deploy_swarm_node() {
     install_prom_agent $id
 }
 
+function get_networkID() {
+
+        base_url="https://api.ctl.io"
+
+        auth_data=$(curl -s \
+                     -H "Accept: application/json" \
+                     -H "Content-Type:application/json" \
+                     -X POST --data '{"username":"'"$clc_uname"'", "password": "'"$clc_pwd"'"}' "$base_url/v2/authentication/login")
+
+        bt=$(echo $auth_data | jq -r .'bearerToken')
+
+        group_data=$(curl -s \
+                       -H "Accept: application/json" \
+                       -H "Content-Type: application/json" \
+                       -H "Authorization: Bearer $bt" \
+                       -X GET "$base_url/v2/groups/$clc_acct_alias/$clc_gid" )
+
+        clc_dcid=$(echo $group_data | jq -r .'locationId')
+
+        net_list=$(curl -s \
+                       -H "Accept: application/json" \
+                       -H "Content-Type: application/json" \
+                       -H "Authorization: Bearer $bt" \
+                       -X GET "$base_url/v2-experimental/networks/$clc_acct_alias/$clc_dcid" )
+
+        clc_nid=$(echo $net_list | jq -r .'[] | select(.description=="'"$clc_net_name"'") | .id')
+
+        set_ev "CLC_NETWORKID" $clc_nid
+}
+
+
+
 function deploy_cluster() {
+
     touch $ENV
 
     set_ev "NODE_COUNT" "$node_count"
@@ -100,6 +133,10 @@ function deploy_cluster() {
     curl -L https://github.com/docker/compose/releases/download/1.3.1/docker-compose-$(uname -s)-$(uname -m) > /usr/local/bin/docker-compose
     chmod +x /usr/local/bin/docker-compose
 
+    #Install jq
+    curl http://stedolan.github.io/jq/download/linux64/jq > /usr/local/bin/jq
+    chmod +x /usr/local/bin/jq
+
     #Cleanup old install/containers/docker-machine
     cleanup_old_install
 
@@ -116,6 +153,9 @@ function deploy_cluster() {
     sw_master="swmstr"
     set_ev "SWARM_MASTER" "$sw_master"
 
+    if [[ "$dm_host" == "clc" ]]; then
+        get_networkID
+    fi
     #Create Master
     deploy_swarm_node $sw_master " --swarm-master "
 
@@ -164,17 +204,18 @@ if [[ "$admin_op" == "create" ]]; then
         swarm_token=$6
 
         deploy_cluster
-    elif [[ "$#" == "11" ]]; then
+    elif [[ "$#" == "12" ]]; then
         dm_host="clc"
         clc_uname="$3"
         clc_pwd="$4"
         clc_gid=$5
-        clc_nid=$6
-        admin_host_ip=$7
-        node_count=$8
-        node_cpu=$9
-        node_ram=${10}
-        swarm_token=${11}
+        clc_net_name=$6
+        clc_acct_alias=$7
+        admin_host_ip=$8
+        node_count=${9}
+        node_cpu=${10}
+        node_ram=${11}
+        swarm_token=${12}
 
         deploy_cluster
     else
