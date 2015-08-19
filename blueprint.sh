@@ -1,5 +1,7 @@
 #! /bin/bash
 
+echo $@ | logger
+
 mkdir -p ~/chimera
 cp -raf * ~/chimera/
 

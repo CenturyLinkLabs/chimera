@@ -2,7 +2,7 @@
 
 ENV="${HOME}/.chimera_env"
 admin_op=$1
-create_prompt="./admin.sh create [--CLC <clc username> <clc password> <clc data center group ID> <clc network id>| --DO <DO API token> ] <admin private IP> <number of nodes> <node cpu cores> <node ram size>"
+create_prompt="./admin.sh create [--CLC <clc username> <clc password> <clc data center group ID> <clc network id>| --DO <DO API token> ] <admin private IP> <number of nodes> <node cpu cores> <node ram size> <admin host name> <install monitoring 0/1> <swarm token>"
 add_prompt="./admin.sh add [--CLC <clc username> <clc password> <clc data center group ID> | --DO <DO API token> ] <number of nodes>"
 
 function set_ev {
@@ -73,7 +73,9 @@ function deploy_swarm_node() {
         exit -1;
     fi
 
-    install_prom_agent $id
+    if [[ "$install_monitoring" == "1" ]]; then 
+        install_prom_agent $id
+    fi
 }
 
 function get_networkID() {
@@ -172,10 +174,13 @@ function deploy_cluster() {
     if [[ "$log_server_id" != "" ]]; then 
         sudo docker rm -f $log_server_id
     fi
-    #Run Containers needed for cluster management
-    sed -i s/ADMIN_HOST_IP_ADDRESS/$admin_host_ip/g docker-compose-chimera.yml
-    sed -i s/ADMIN_HOST_IP_ADDRESS/$admin_host_ip/g alertmanager.conf
-    docker-compose -f docker-compose-chimera.yml up -d
+
+    if [[ "$install_monitoring" == "1" ]]; then
+        #Run Containers needed for cluster management
+        sed -i s/ADMIN_HOST_IP_ADDRESS/$admin_host_ip/g docker-compose-chimera.yml
+        sed -i s/ADMIN_HOST_IP_ADDRESS/$admin_host_ip/g alertmanager.conf
+        docker-compose -f docker-compose-chimera.yml up -d
+    fi
 
     #Add chimera aliases for easier docker-machine usage.
     cp cdm.sh /usr/local/bin/cdm
@@ -204,7 +209,7 @@ if [[ "$admin_op" == "create" ]]; then
         swarm_token=$6
 
         deploy_cluster
-    elif [[ "$#" == "12" ]]; then
+    elif [[ "$#" == "14" ]]; then
         dm_host="clc"
         clc_uname="$3"
         clc_pwd="$4"
@@ -215,7 +220,9 @@ if [[ "$admin_op" == "create" ]]; then
         node_count=${9}
         node_cpu=${10}
         node_ram=${11}
-        swarm_token=${12}
+        admin_host_id=${12}
+        install_monitoring=${13}
+        swarm_token=${14}
 
         deploy_cluster
     else
