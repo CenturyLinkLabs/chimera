@@ -62,8 +62,8 @@ function deploy_swarm_node() {
 
     cmd="docker-machine --debug  \
              create $clp   \
-             --engine-install-url \"https://get.docker.com/ubuntu/ | sed -r 's/^apt-get install -y lxc-docker$/apt-get install -y lxc-docker-1.7.1/g' \" \
-             --swarm-image swarm:0.3.0 \
+             --engine-install-url \"https://get.docker.com\"  \
+             --swarm-image swarm:0.4.0 \
              --swarm  $af \
              --swarm-discovery token://$SWARM_TOKEN  $id"
 
@@ -119,20 +119,20 @@ function deploy_cluster() {
     set_ev "CHIMERA_PORT" "8888"
     set_ev "PROVIDER" "$dm_host"
 
-    #Install Docker
-    add-apt-repository -y "deb https://get.docker.com/ubuntu docker main"
-    apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 36A1D7869245C8950F966E92D8576A8BA88D21E9
-    apt-get update -y -qq
-    apt-get install -y lxc-docker-1.7.1 curl
 
-    #Install Docker-Machine
+    #Install Docker
+    add-apt-repository -y "deb https://apt.dockerproject.org/repo ubuntu-trusty main"
+    apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D
+    apt-get update -y -qq
+    apt-get install -y docker-engine
+
     #curl -L https://github.com/docker/machine/releases/download/v0.3.0/docker-machine_linux-amd64 > /usr/local/bin/docker-machine
     #Installing custom docker machine built with clc integration
     cp bin/docker-machine_linux-amd64 /usr/local/bin/docker-machine
     chmod +x /usr/local/bin/docker-machine
 
     #Install Docker-Compose
-    curl -L https://github.com/docker/compose/releases/download/1.3.1/docker-compose-$(uname -s)-$(uname -m) > /usr/local/bin/docker-compose
+    curl -L https://github.com/docker/compose/releases/download/1.4.0/docker-compose-$(uname -s)-$(uname -m) > /usr/local/bin/docker-compose
     chmod +x /usr/local/bin/docker-compose
 
     #Install jq
@@ -143,9 +143,9 @@ function deploy_cluster() {
     cleanup_old_install
 
     #Create Swarm Token
-    docker run swarm:0.3.0 create > /tmp/swarm_token
+    docker run swarm:0.4.0 create > /tmp/swarm_token
     SWARM_TOKEN=$swarm_token
-    #SWARM_TOKEN=$(docker run swarm:0.3.0 create)
+    #SWARM_TOKEN=$(docker run swarm:0.4.0 create)
     echo SWARM TOKEN $SWARM_TOKEN
     set_ev "SWARM_TOKEN" "$SWARM_TOKEN"
 
